@@ -7,6 +7,10 @@ import { fileURLToPath } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 globalThis.location = new URL(process.env.MOCK ? `http://localhost/?mock=${process.env.MOCK}` : 'http://localhost/');
+if (!process.env.MOCK && process.env.DEM !== '0') {
+  const { elevations } = await import('./dem.mjs');
+  globalThis.__elevations = elevations;
+}
 const { SITES } = await import('../data/sites.js');
 const { hikesFor } = await import('../js/hikes.js');
 const { slugOf } = await import('../js/util.js');
@@ -17,7 +21,7 @@ const only = (process.env.ONLY || '').split(',').map((s) => s.trim()).filter(Boo
 const limit = +process.env.LIMIT || Infinity;
 const pause = process.env.PAUSE ? +process.env.PAUSE : 6000;
 // Budget de temps : on s'arrête proprement avant la limite de GitHub, pour que le travail fait soit enregistré.
-const budget = (process.env.BUDGET_MIN ? +process.env.BUDGET_MIN : 95) * 60000;
+const budget = (process.env.BUDGET_MIN ? +process.env.BUDGET_MIN : 300) * 60000;
 const started = Date.now();
 const round = (pts) => pts.map(([a, b]) => [+a.toFixed(5), +b.toFixed(5)]);
 

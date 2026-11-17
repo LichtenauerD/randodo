@@ -3,7 +3,16 @@ name: Randos précalculées
 on:
   schedule:
     - cron: '17 2 * * 1'   # chaque lundi vers 3 h 17 (heure de Paris en hiver)
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      only:
+        description: 'Noms de lieux à calculer, séparés par des virgules (vide : tous)'
+        required: false
+        default: ''
+      limit:
+        description: 'Nombre maximal de lieux (vide : pas de limite)'
+        required: false
+        default: ''
 
 permissions:
   contents: write
@@ -15,15 +24,26 @@ concurrency:
 jobs:
   calcul:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 330
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Outils
+        run: npm install --prefix tools --no-audit --no-fund
+      - name: Modèle de terrain (cache)
+        uses: actions/cache@v4
+        with:
+          path: dem
+          key: dem-copernicus-glo30-v1
       - name: Calcul des randos des lieux du catalogue
+        env:
+          ONLY: ${{ github.event.inputs.only }}
+          LIMIT: ${{ github.event.inputs.limit }}
         run: node tools/precompute.mjs
       - name: Enregistrement
+        if: always()
         run: |
           git config user.name "randodo-bot"
           git config user.email "randodo-bot@users.noreply.github.com"

@@ -1,0 +1,6 @@
+{
+  "private": true,
+  "type": "module",
+  "description": "Outils du calcul hebdomadaire de Randodo",
+  "dependencies": { "geotiff": "^2.1.3" }
+}

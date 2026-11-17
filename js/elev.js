@@ -8,6 +8,8 @@ export async function profile(pts) {
   const step = Math.max(70, len / 300);
   const samples = resample(pts, step);
   const ele = [];
+  // Calcul hebdomadaire : altitudes lues directement dans un modèle de terrain, sans service en ligne.
+  if (globalThis.__elevations) return summarize(samples, await globalThis.__elevations(samples), len);
   for (let i = 0; i < samples.length; i += 100) {
     const chunk = samples.slice(i, i + 100);
     const url = CONFIG.elevation + '?latitude=' + chunk.map((p) => p[0].toFixed(5)).join(',') + '&longitude=' + chunk.map((p) => p[1].toFixed(5)).join(',');
