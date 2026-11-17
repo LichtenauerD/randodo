@@ -397,7 +397,7 @@ export function proposeHikes(g, place, others = []) {
   // Écarte les doublons (même longueur à 150 m près et même départ) et les tracés trop routiers.
   const uniq = [];
   for (const c of candidates.sort((a, b) => a.meters - b.meters)) {
-    if (c.meters < 900) continue;
+    if (c.meters < 3000) continue; // en dessous de 3 km, c'est une promenade, pas une rando
     if (c.road > 0.5 && candidates.length > 2) continue;
     if (uniq.some((u) => Math.abs(u.meters - c.meters) < 150 && u.start.v === c.start.v)) continue;
     uniq.push(c);

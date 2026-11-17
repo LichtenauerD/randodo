@@ -7,7 +7,7 @@ import { knownPlaces } from './places.js';
 import { kv, settings, dist, simplify, walkMinutes, lineLength, bboxOf, uid, cumulative, slugOf } from './util.js';
 
 const TTL = 30 * 86400000;
-const FORMAT = 4;
+const FORMAT = 5;
 const tick = () => new Promise((r) => setTimeout(r, 30));
 
 function scoreOf(c) {

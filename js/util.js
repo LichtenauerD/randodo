@@ -133,9 +133,10 @@ export function fmtDur(min) {
   return h + ' h' + (m ? ' ' + String(m).padStart(2, '0') : '');
 }
 // Temps de marche : formule des panneaux de randonnée (4 km/h à plat, 300 m/h en montée, 500 m/h en descente).
+// Temps de marche sans les pauses : 4 km/h à plat, 400 m/h en montée, 800 m/h en descente.
 export function walkMinutes(meters, up, down) {
   const horiz = meters / 4000;
-  const vert = up / 300 + down / 500;
+  const vert = up / 400 + down / 800;
   return (Math.max(horiz, vert) + Math.min(horiz, vert) / 2) * 60;
 }
 
