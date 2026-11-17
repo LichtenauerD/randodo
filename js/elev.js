@@ -11,7 +11,13 @@ export async function profile(pts) {
   for (let i = 0; i < samples.length; i += 100) {
     const chunk = samples.slice(i, i + 100);
     const url = CONFIG.elevation + '?latitude=' + chunk.map((p) => p[0].toFixed(5)).join(',') + '&longitude=' + chunk.map((p) => p[1].toFixed(5)).join(',');
-    const json = await fetchJson(url, {}, 20000);
+    let json, err;
+    // Le service d'altitude répond parfois 429 ou 503 quand il est chargé : trois essais espacés.
+    for (const wait of [0, 2500, 6000]) {
+      if (wait) await new Promise((r) => setTimeout(r, wait));
+      try { json = await fetchJson(url, {}, 20000); break; } catch (e) { err = e; }
+    }
+    if (!json) throw err;
     if (!json || !Array.isArray(json.elevation)) throw new Error('altitudes indisponibles');
     ele.push(...json.elevation);
   }

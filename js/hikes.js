@@ -51,7 +51,7 @@ export async function hikesFor(place, onStep = () => {}, force = false) {
   const key = 'rt:' + place.id;
   if (!force) {
     const cached = await kv.get(key);
-    if (cached && cached.v === FORMAT && Date.now() - cached.t < TTL) return cached;
+    if (cached && cached.v === FORMAT && Date.now() - cached.t < (cached.noEle ? 15 * 60000 : TTL)) return cached;
   }
   onStep('Chargement des sentiers autour du lieu');
   const els = await overpass(qGraph(place.lat, place.lon, CONFIG.graphRadius));
