@@ -246,7 +246,7 @@ export function openHike(h, ctx = {}) {
   const warns = warnsOf(h);
   const startTxt = h.start && h.start.kind !== 'balise' && h.start.kind !== 'import'
     ? `<p class="note">Départ : ${esc(h.start.name || (h.start.kind === 'parking' ? 'parking' : h.start.kind === 'gare' ? 'gare' : 'bord de route'))}. <a href="https://www.google.com/maps/dir/?api=1&destination=${h.start.lat.toFixed(5)},${h.start.lon.toFixed(5)}" target="_blank" rel="noopener">Itinéraire jusqu'au départ</a></p>` : '';
-  const wmt = h.relId ? `<a class="btn small wide" href="${CONFIG.waymarkedGpx.replace('{id}', h.relId)}" target="_blank" rel="noopener">Trace officielle du circuit (Waymarked Trails)</a>` : '';
+  const wmt = h.relId ? `<a class="btn small wide" href="${CONFIG.waymarkedGpx.replace('{id}', h.relId)}" target="_blank" rel="noopener">Fiche officielle du circuit (Waymarked Trails)</a>` : '';
   const site = h.website ? `<a class="btn small wide" href="${esc(h.website)}" target="_blank" rel="noopener">Page officielle du circuit</a>` : '';
   frame(`${back}${signHtml(h, ' sel')}
     <div class="hike-card">

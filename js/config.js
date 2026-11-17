@@ -4,7 +4,7 @@ const params = new URLSearchParams(location.search);
 // Mode test : ?mock=http://localhost:8765 remplace tous les services par un serveur local.
 const MOCK = params.get('mock') || '';
 
-export const VERSION = '1.5.0';
+export const VERSION = '1.5.1';
 
 export const CONFIG = {
   mock: MOCK,
@@ -88,7 +88,8 @@ export const CONFIG = {
       direct: 'https://hiking.waymarkedtrails.org/#?map=14.0/{lat}/{lon}' },
   ],
   // Trace GPX d'un circuit balisé OpenStreetMap, par son numéro de relation.
-  waymarkedGpx: MOCK ? MOCK + '/wmt/{id}/gpx' : 'https://hiking.waymarkedtrails.org/api/v1/details/relation/{id}/gpx',
+  // Page du circuit sur Waymarked Trails : carte, profil et bouton GPX (l'export direct échoue sur les circuits mal ordonnés).
+  waymarkedGpx: 'https://hiking.waymarkedtrails.org/#route?id={id}&type=relation',
 };
 
 export function levelOf(km, up) {

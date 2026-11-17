@@ -1,7 +1,7 @@
 // Mode hors ligne de Randodo. Le stockage de cache est commun à toutes les applis du même site GitHub Pages :
 // seuls les caches préfixés « randodo- » sont touchés.
 // L'appli elle-même est mise en cache, les tuiles déjà vues aussi (jamais téléchargées d'avance).
-const VERSION = 'randodo-1.5.0';
+const VERSION = 'randodo-1.5.1';
 const SHELL = [
   './', 'index.html', 'manifest.webmanifest', 'css/app.css',
   'js/app.js', 'js/config.js', 'js/util.js', 'js/state.js', 'js/overpass.js', 'js/places.js', 'js/router.js',
