@@ -114,7 +114,7 @@ export function openLogForm({ place, hike, walked, walkedMinutes, onSaved, entry
 // ---------- Premier lancement : prénom, puis inscription dans la feuille du groupe ----------
 export function askName() {
   if (settings.get('pseudo', '').trim()) { register(); return; }
-  const box = openModal(`<div class="welcome"><img src="icons/icon-192.png" alt="" width="84" height="84"><h2>Bienvenue sur Randodo</h2>
+  const box = openModal(`<div class="welcome"><img src="icons/icon-192.png" alt="" width="84" height="84"><h2>Bienvenue sur Randodo</h2><p class="motto">Le dodo ne vole pas. Il marche. Et toi ?</p>
     <p>C'est quoi ton prénom ? Il sert à signer tes randos quand tu les partages avec les autres.</p>
     <label class="field"><input type="text" id="wn-name" placeholder="Ton prénom" maxlength="24" autocomplete="given-name" autocapitalize="words"></label>
     <button type="button" class="btn main" id="wn-ok" style="width:100%;margin-top:14px">C'est parti</button></div>`);
@@ -328,7 +328,7 @@ function renderSettings() {
       <div class="row"><button type="button" class="btn small main" id="s-diag">Lancer le diagnostic</button><button type="button" class="btn small" id="s-demo">Démonstration du guidage</button></div><ul class="diag" id="diag" style="margin-top:8px"></ul></div>
     <div class="card"><h3>Sources</h3><p class="meta">Lieux, sentiers et balisage : © contributeurs OpenStreetMap (licence ODbL). Photos : Wikimedia Commons et Wikipédia. Altitudes : Open-Meteo (modèle Copernicus à 90 m). Recherche de lieux : Photon. Temps de route : OSRM. Les tracés sont calculés automatiquement et ne remplacent ni une carte ni ton jugement sur le terrain.</p>
       <p class="meta" style="margin-top:8px">Randodo ${VERSION}</p></div>
-    <p class="signature">Par Dorian Lichtenauer</p>`;
+    <p class="signature">Le dodo ne vole pas. Il marche. Et toi ?<br>Par Dorian Lichtenauer</p>`;
   $('#s-pseudo', p).onchange = (e) => { settings.set('pseudo', e.target.value.trim()); register(); };
   $('#s-url', p).onchange = (e) => { settings.set('communityUrl', e.target.value.trim()); register(); };
   $('#s-ign', p).onchange = (e) => { settings.set('ignScanKey', e.target.value.trim()); toast(e.target.value.trim() ? 'Clé enregistrée : le fond « IGN 1:25 000 » est disponible sur la carte.' : 'Clé retirée.'); };
