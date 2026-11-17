@@ -304,3 +304,68 @@ a.btn { text-decoration: none; color: inherit; }
 .signature { margin: 28px 0 12px; text-align: center; font-size: 12px; opacity: .45; letter-spacing: .02em; }
 .hud-actions { display: flex; gap: 8px; margin-top: 10px; }
 .hud-actions button, .hud-actions a { flex: 1; padding: 9px 10px; border: 0; border-radius: 10px; background: rgba(255, 255, 255, 0.92); color: #3d2600; font: inherit; font-size: 0.95rem; font-weight: 600; text-align: center; text-decoration: none; }
+
+/* ---------- Recherche de l'accueil : tous les choix visibles ---------- */
+.finder { margin-top: 22px; background: var(--papier); border-radius: 22px; padding: 20px 16px 16px; box-shadow: 0 1px 0 var(--trait), 0 10px 30px rgba(20,33,27,.07); }
+.finder h2 { font-size: 1.55rem; margin-bottom: 4px; }
+.fq { margin-top: 16px; }
+.fl { display: block; font: 600 1.02rem var(--sign); color: var(--encre); margin-bottom: 8px; }
+.fl b { color: var(--sapin); box-shadow: inset 0 -5px 0 var(--balise); }
+.fl small { font: 400 .82rem var(--text); color: var(--gris); margin-left: 6px; }
+.fo { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.fbtn { display: flex; align-items: center; gap: 6px; min-height: 48px; padding: 0 10px; font-size: .92rem; border-radius: 14px; border: 1.5px solid var(--trait); background: #fff; font-weight: 600; text-align: left; overflow: hidden; }
+.fbtn svg { width: 20px; height: 20px; flex: none; color: var(--violet); }
+.fbtn span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fbtn.on { border-color: var(--sapin); box-shadow: inset 0 0 0 1.5px var(--sapin); }
+.fbtn.wait svg { animation: pulse .8s ease-in-out infinite; }
+@keyframes pulse { 50% { transform: scale(1.25); opacity: .5; } }
+.fdrive { position: relative; display: grid; grid-template-columns: repeat(var(--n), 1fr); background: var(--brume); border-radius: 14px; padding: 4px; }
+.fdrive .thumb { position: absolute; top: 4px; bottom: 4px; left: 4px; width: calc((100% - 8px) / var(--n)); border-radius: 11px; background: var(--sapin); transform: translateX(calc(var(--i) * 100%)); transition: transform .32s cubic-bezier(.3,1.35,.5,1); }
+.fdrive button { position: relative; min-height: 42px; border: 0; background: none; font: 600 .92rem var(--text); color: var(--encre); transition: color .2s; }
+.fdrive button.on { color: #fff; }
+.fgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.fgrid button { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 4px 10px; border-radius: 16px; border: 1.5px solid var(--trait); background: #fff; font: 600 .9rem var(--sign); color: var(--encre); transition: background .2s, border-color .2s, color .2s; }
+.fgrid .ic { width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center; background: color-mix(in srgb, var(--c) 14%, white); color: var(--c); transition: background .2s, color .2s; }
+.fgrid .ic svg { width: 24px; height: 24px; }
+.fgrid button.on { background: var(--c); border-color: var(--c); color: #fff; }
+.fgrid button.on .ic { background: rgba(255,255,255,.22); color: #fff; }
+.flv { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.flv button { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 10px 10px 10px 12px; border-radius: 14px; border: 1.5px solid var(--trait); background: #fff; text-align: left; position: relative; overflow: hidden; transition: background .2s, color .2s, border-color .2s; }
+.flv button::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 5px; background: var(--c); }
+.flv b { font: 700 1rem var(--sign); }
+.flv span { font-size: .74rem; color: var(--gris); line-height: 1.2; }
+.flv button.on { background: var(--c); border-color: var(--c); color: #fff; }
+.flv button.on span { color: rgba(255,255,255,.85); }
+.pop { animation: pop .35s cubic-bezier(.3,1.6,.5,1); }
+@keyframes pop { 40% { transform: scale(.92); } 100% { transform: scale(1); } }
+.btn.find { margin-top: 20px; background: var(--violet); border-color: var(--violet); }
+.bump { animation: bump .4s cubic-bezier(.3,1.6,.5,1); }
+@keyframes bump { 40% { transform: scale(1.04); } }
+
+/* ---------- Vie de l'interface ---------- */
+.hello { position: relative; }
+.hello .walk { display: block; width: 100%; height: 34px; margin: 10px 0 -6px; overflow: visible; }
+.hello .walk path { fill: none; stroke: var(--violet); stroke-width: 3.5; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 1; animation: drawline 1.6s .2s cubic-bezier(.45,.05,.3,1) forwards; }
+.hello .walk circle { fill: var(--balise); opacity: 0; animation: fadein .3s 1.7s forwards; }
+@keyframes drawline { to { stroke-dashoffset: 0; } }
+@keyframes fadein { to { opacity: 1; } }
+.signs > * { animation: signin .42s cubic-bezier(.2,.9,.3,1.15) both; }
+.signs > *:nth-child(2) { animation-delay: .07s; } .signs > *:nth-child(3) { animation-delay: .14s; } .signs > *:nth-child(4) { animation-delay: .21s; } .signs > *:nth-child(n+5) { animation-delay: .28s; }
+@keyframes signin { from { opacity: 0; transform: translateX(-28px); } }
+.plist > * { animation: risein .4s ease-out both; }
+.plist > *:nth-child(2) { animation-delay: .05s; } .plist > *:nth-child(3) { animation-delay: .1s; } .plist > *:nth-child(4) { animation-delay: .15s; } .plist > *:nth-child(n+5) { animation-delay: .2s; }
+@keyframes risein { from { opacity: 0; transform: translateY(14px); } }
+button:active:not(:disabled) { transform: scale(.97); }
+/* Tracé : il se dessine à l'apparition, puis un fil lumineux court dans le sens de marche. */
+.trace-draw { stroke-dasharray: var(--len); stroke-dashoffset: var(--len); animation: tracedraw 1.1s cubic-bezier(.45,.05,.3,1) forwards; }
+@keyframes tracedraw { to { stroke-dashoffset: 0; } }
+.trace-flow { stroke-dasharray: 2 22; animation: traceflow 1.4s linear infinite; }
+@keyframes traceflow { to { stroke-dashoffset: -24; } }
+.me-ring { animation: ring 1.8s ease-out infinite; }
+@keyframes ring { from { transform: scale(.6); opacity: .7; } to { transform: scale(2.4); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .trace-draw, .trace-flow, .signs > *, .plist > *, .hello .walk path, .hello .walk circle, .me-ring, .pop, .bump { animation: none !important; stroke-dashoffset: 0; opacity: 1; }
+  .trace-flow { display: none; }
+}
+.me { position: relative; }
+.me-ring { position: absolute; inset: -3px; border-radius: 50%; background: rgba(26,115,232,.45); z-index: -1; }

@@ -12,12 +12,12 @@ const LVL = { facile: 'Facile', moyenne: 'Moyenne', difficile: 'Difficile' };
 
 // Les six envies de la recherche, chacune regroupant des types de lieux.
 export const GROUPS = [
-  { id: 'eau', phrase: 'des cascades et des gorges', label: 'Cascades et gorges', types: ['cascade', 'gorge'], icon: 'cascade' },
-  { id: 'lac', phrase: 'des lacs', label: 'Lacs', types: ['lac'], icon: 'lac' },
-  { id: 'vue', phrase: 'des sommets et des points de vue', label: 'Sommets et points de vue', types: ['sommet', 'vue'], icon: 'sommet' },
-  { id: 'ruine', phrase: 'des châteaux et des ruines', label: 'Châteaux et ruines', types: ['chateau'], icon: 'chateau' },
-  { id: 'roche', phrase: 'des rochers et des grottes', label: 'Rochers et grottes', types: ['rocher', 'grotte'], icon: 'rocher' },
-  { id: 'abri', phrase: 'des refuges isolés', label: 'Refuges et bâtiments isolés', types: ['refuge'], icon: 'refuge' },
+  { id: 'eau', short: 'Cascades', phrase: 'des cascades et des gorges', label: 'Cascades et gorges', types: ['cascade', 'gorge'], icon: 'cascade' },
+  { id: 'lac', short: 'Lacs', phrase: 'des lacs', label: 'Lacs', types: ['lac'], icon: 'lac' },
+  { id: 'vue', short: 'Sommets', phrase: 'des sommets et des points de vue', label: 'Sommets et points de vue', types: ['sommet', 'vue'], icon: 'sommet' },
+  { id: 'ruine', short: 'Châteaux', phrase: 'des châteaux et des ruines', label: 'Châteaux et ruines', types: ['chateau'], icon: 'chateau' },
+  { id: 'roche', short: 'Rochers', phrase: 'des rochers et des grottes', label: 'Rochers et grottes', types: ['rocher', 'grotte'], icon: 'rocher' },
+  { id: 'abri', short: 'Refuges', phrase: 'des refuges isolés', label: 'Refuges et bâtiments isolés', types: ['refuge'], icon: 'refuge' },
 ];
 const DURATIONS = [[30, '30 min'], [60, '1 h'], [90, '1 h 30'], [120, '2 h'], [180, '3 h']];
 // Sites d'altitude, écartés des suggestions de novembre à avril.
@@ -120,19 +120,115 @@ const SEASON = ['Janvier : neige probable sur les crêtes. Vise bas, ou sors les
   'Juillet : pars tôt, et vise un lac.', 'Août : pars tôt, les crêtes chauffent vite.', 'Septembre : lumière douce, sentiers calmes.',
   'Octobre : les forêts changent de couleur.', 'Novembre : la nuit tombe tôt, pars le matin.', 'Décembre : jours courts, sorties courtes.'];
 
-function sentence() {
-  const q = { minutes: 60, groups: [], levels: [], ...settings.get('search', {}) };
-  const o = getOrigin();
-  const tok = (t) => `<button type="button" class="tok">${esc(t)}</button>`;
-  const what = q.groups.length ? GROUPS.filter((g) => q.groups.includes(g.id)).map((g) => g.phrase).join(', ') : 'un peu de tout';
-  const lv = q.levels.length ? q.levels.map((l) => LVL[l].toLowerCase()).join(' ou ') : 'peu importe';
-  return `Depuis ${tok(o ? (o.name === 'Ma position' ? 'ma position' : o.name) : 'un départ à choisir')}, à ${tok(DURATIONS.find((d) => d[0] === q.minutes)[1])} de route au plus, j'ai envie de voir ${tok(what)}. Niveau : ${tok(lv)}.`;
+const PIN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>';
+const TOWN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V10l5-4 5 4v11M15 21v-7h4v7"/></svg>';
+const LVSUB = { facile: "jusqu'à 8 km", moyenne: '8 à 15 km', difficile: 'plus long, plus raide' };
+const getQ = () => ({ minutes: 60, groups: [], levels: [], ...settings.get('search', {}) });
+
+// Panneau de recherche : tous les choix visibles, un appui suffit.
+function finderHtml() {
+  const q = getQ(), o = getOrigin();
+  const town = o && o.name !== 'Ma position';
+  return `<h2>Trouve ta prochaine rando</h2>
+    <div class="fq"><span class="fl">Je pars de</span><div class="fo">
+      <button type="button" class="fbtn${o && !town ? ' on' : ''}" data-o="me">${PIN}<span>Ma position</span></button>
+      <button type="button" class="fbtn${town ? ' on' : ''}" data-o="town">${TOWN}<span>${town ? esc(o.name) : 'Une commune'}</span></button></div></div>
+    <div class="fq"><span class="fl">Jusqu'à <b id="f-dv">${DURATIONS.find((d) => d[0] === q.minutes)[1]}</b> de voiture</span>
+      <div class="fdrive" style="--n:${DURATIONS.length};--i:${Math.max(0, DURATIONS.findIndex((d) => d[0] === q.minutes))}"><span class="thumb"></span>${DURATIONS.map(([v, l]) => `<button type="button" data-v="${v}" class="${q.minutes === v ? 'on' : ''}">${l}</button>`).join('')}</div></div>
+    <div class="fq"><span class="fl">J'ai envie de voir <small>${q.groups.length ? '' : 'rien de choisi : tout est proposé'}</small></span>
+      <div class="fgrid">${GROUPS.map((g) => `<button type="button" data-v="${g.id}" class="${q.groups.includes(g.id) ? 'on' : ''}" style="--c:${(TYPES[g.types[0]] || TYPES.lieu).color}"><span class="ic">${glyph(g.icon)}</span>${g.short}</button>`).join('')}</div></div>
+    <div class="fq"><span class="fl">Niveau <small>${q.levels.length ? '' : 'tous les niveaux'}</small></span>
+      <div class="flv">${CONFIG.levels.map((l) => `<button type="button" data-v="${l.id}" class="${q.levels.includes(l.id) ? 'on' : ''}" style="--c:${LVC[l.id]}"><b>${l.label}</b><span>${LVSUB[l.id]}</span></button>`).join('')}</div></div>
+    <button type="button" class="btn main big find" id="hm-search"><span id="f-count">Voir les randos</span></button>`;
 }
-function paintSentence() {
-  const box = host && $('#hm-sentence', host);
+function bindFinder() {
+  const box = host && $('#hm-finder', host);
   if (!box) return;
-  box.innerHTML = sentence();
-  box.querySelectorAll('.tok').forEach((b) => { b.onclick = openSearch; });
+  box.innerHTML = finderHtml();
+  const save = (q) => { settings.set('search', q); countPreview(); };
+  box.querySelectorAll('.fo .fbtn').forEach((b) => {
+    b.onclick = async () => {
+      if (b.dataset.o === 'town') return openOrigin();
+      b.classList.add('wait');
+      try { await locateMe(); bindFinder(); } catch (err) { toast(err.message, 4500); openOrigin(); }
+      b.classList.remove('wait');
+    };
+  });
+  const drive = $('.fdrive', box);
+  drive.querySelectorAll('button').forEach((b, i) => {
+    b.onclick = () => {
+      drive.querySelectorAll('button').forEach((x) => x.classList.toggle('on', x === b));
+      drive.style.setProperty('--i', i);
+      $('#f-dv', box).textContent = b.textContent;
+      save({ ...getQ(), minutes: +b.dataset.v });
+    };
+  });
+  const multi = (sel, key, hintEmpty) => box.querySelectorAll(sel + ' button').forEach((b) => {
+    b.onclick = () => {
+      b.classList.toggle('on'); b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop');
+      const vals = [...box.querySelectorAll(sel + ' button.on')].map((x) => x.dataset.v);
+      const small = b.closest('.fq').querySelector('.fl small'); if (small) small.textContent = vals.length ? '' : hintEmpty;
+      save({ ...getQ(), [key]: vals });
+    };
+  });
+  multi('.fgrid', 'groups', 'rien de choisi : tout est proposé');
+  multi('.flv', 'levels', 'tous les niveaux');
+  $('#hm-search', box).onclick = async () => {
+    let o = getOrigin();
+    if (!o) { try { o = await locateMe(); bindFinder(); } catch (err) { toast(err.message, 4500); openOrigin(); return; } }
+    runSearch(getQ(), o);
+    setTimeout(() => { const r = $('#hm-results', host); if (r) r.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 60);
+  };
+  countPreview();
+}
+
+// Aperçu du nombre de lieux, recalculé à chaque choix (lieux de la sélection, distance à vol d'oiseau).
+async function countPreview() {
+  const lab = host && $('#f-count', host);
+  if (!lab) return;
+  const o = getOrigin(), q = getQ();
+  if (!o) { lab.textContent = 'Voir les randos'; return; }
+  const types = q.groups.length ? GROUPS.filter((g) => q.groups.includes(g.id)).flatMap((g) => g.types) : [];
+  const kmMax = q.minutes / 1.35;
+  const idx = await hikeIndex();
+  let n = 0;
+  for (const s of SITES) {
+    if (types.length && !types.includes(s.type)) continue;
+    if (dist([o.lat, o.lon], [s.lat, s.lon]) / 1000 > kmMax) continue;
+    const e = idx[slugOf(s.name)];
+    if (q.levels.length && e && !e.some((h) => q.levels.includes(h.level))) continue;
+    n++;
+  }
+  const txt = n ? `Voir ${n > 1 ? 'les ' + n + ' lieux' : 'le lieu'}` : 'Chercher plus largement';
+  if (lab.textContent !== txt) { lab.textContent = txt; lab.parentElement.classList.remove('bump'); void lab.offsetWidth; lab.parentElement.classList.add('bump'); }
+}
+
+// Choix du point de départ : une commune.
+function openOrigin() {
+  const m = document.getElementById('modal');
+  m.innerHTML = `<div class="box" role="dialog" aria-modal="true"><h2>D'où pars-tu ?</h2>
+    <input type="text" id="sr-q" placeholder="Nom de la commune" autocomplete="off"><ul id="sr-list" class="townlist"></ul>
+    <div class="foot"><button type="button" class="btn" id="sr-cancel">Annuler</button></div></div>`;
+  m.hidden = false;
+  const close = () => { m.hidden = true; m.innerHTML = ''; };
+  m.onclick = (e) => { if (e.target === m) close(); };
+  $('#sr-cancel', m).onclick = close;
+  setTimeout(() => $('#sr-q', m).focus(), 50);
+  let t;
+  $('#sr-q', m).oninput = () => {
+    clearTimeout(t);
+    t = setTimeout(async () => {
+      const qs = $('#sr-q', m).value.trim();
+      if (qs.length < 3) return;
+      try {
+        const res = (await searchRemote(qs)).slice(0, 6);
+        $('#sr-list', m).innerHTML = res.map((r, i) => `<li><button type="button" data-i="${i}"><b>${esc(r.name)}</b> <span class="sub">${esc(r.where || '')}</span></button></li>`).join('') || '<li class="note">Aucune commune trouvée.</li>';
+        $('#sr-list', m).querySelectorAll('button').forEach((b) => {
+          b.onclick = () => { const r = res[+b.dataset.i]; settings.set('origin', { lat: +r.lat.toFixed(4), lon: +r.lon.toFixed(4), name: r.name }); close(); bindFinder(); };
+        });
+      } catch { $('#sr-list', m).innerHTML = '<li class="note">Recherche de communes indisponible sans réseau.</li>'; }
+    }, 350);
+  };
 }
 
 function heroHtml(p) {
@@ -149,7 +245,7 @@ function tileHtml(p) {
   return `<button type="button" class="tile pcard-like" data-id="${esc(p.id)}"><span class="ph" style="${img ? `background-image:url('${img.replace(/'/g, '%27')}')` : `color:${t.color}`}">${img ? '' : glyph(p.type)}</span><b>${esc(p.name)}</b><span>${t.one}${p._min != null ? ', ' + fmtDrive(p._min) : ''}</span></button>`;
 }
 function picksHtml(picks) {
-  if (!picks.length) return '<p class="note">Tu as fait tous les sites proches. Allonge le temps de route dans la phrase du haut.</p>';
+  if (!picks.length) return '<p class="note">Tu as fait tous les sites proches. Allonge le temps de route dans la recherche du haut.</p>';
   return `<h3>L'idée de la semaine</h3>${heroHtml(picks[0])}${picks.length > 1 ? `<h3 class="sub-h">Et ${picks.length - 1 === 3 ? 'trois' : picks.length - 1 === 2 ? 'deux' : 'une'} autre${picks.length > 2 ? 's' : ''}</h3><div class="strip">${picks.slice(1).map(tileHtml).join('')}</div>` : ''}`;
 }
 function mineHtml() {
@@ -170,19 +266,15 @@ export async function renderHome(el) {
   const web = await webIdeas(false);
   const name = settings.get('pseudo', '').trim();
   el.innerHTML = `<div class="home">
-    <header class="hello"><img src="icons/icon-192.png" alt="" width="56" height="56"><h1>Salut${name ? ' ' + esc(name) : ''}</h1><p>${SEASON[new Date().getMonth()]}</p></header>
-    <section class="ask"><p class="sentence" id="hm-sentence"></p><button type="button" class="btn main big" id="hm-search">Trouver</button></section>
+    <header class="hello"><img src="icons/icon-192.png" alt="" width="56" height="56"><h1>Salut${name ? ' ' + esc(name) : ''}</h1><p>${SEASON[new Date().getMonth()]}</p>
+      <svg class="walk" viewBox="0 0 320 34" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" d="M3 27 C 40 27, 52 9, 92 12 S 142 31, 182 21 S 240 5, 272 10 S 300 20, 312 9"/><circle cx="312" cy="9" r="5"/></svg></header>
+    <section class="finder" id="hm-finder"></section>
     <div id="hm-results"></div>
     <section class="week" id="hm-picks">${picksHtml(picks)}</section>
     <section class="webs" id="hm-web"${web.length ? '' : ' hidden'}>${webHtml(web)}</section>
     ${mineHtml()}
   </div>`;
-  paintSentence();
-  $('#hm-search', el).onclick = () => {
-    const o = getOrigin();
-    if (!o) { openSearch(); return; }
-    runSearch({ minutes: 60, groups: [], levels: [], ...settings.get('search', {}) }, o);
-  };
+  bindFinder();
   if ($('#hm-hist', el)) $('#hm-hist', el).onclick = () => goTab('historique');
   bindPlaces($('#hm-picks', el), picks);
   bindWeb(web);
@@ -217,64 +309,6 @@ function bindWeb(items) {
 }
 
 // ---------- Recherche guidée ----------
-function openSearch() {
-  const saved = { minutes: 60, groups: [], levels: [], ...settings.get('search', {}) };
-  let origin = getOrigin();
-  const m = document.getElementById('modal');
-  m.innerHTML = `<div class="box" role="dialog" aria-modal="true"><h2>Chercher une rando</h2>
-    <div class="field"><span>Point de départ</span>
-      <p id="sr-origin" style="font-weight:600"></p>
-      <div class="row" style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><button type="button" class="btn small" id="sr-me">Ma position actuelle</button><button type="button" class="btn small" id="sr-town">Choisir une commune</button></div>
-      <div id="sr-townbox" hidden><input type="text" id="sr-q" placeholder="Nom de la commune" style="margin-top:8px" autocomplete="off"><ul id="sr-list" class="townlist"></ul></div></div>
-    <div class="field"><span>Temps de route maximal</span><div class="checks" id="sr-min">${DURATIONS.map(([v, l]) => `<button type="button" class="chip${saved.minutes === v ? ' on' : ''}" data-v="${v}">${l}</button>`).join('')}</div></div>
-    <div class="field"><span>Ce que tu veux voir</span><div class="checks" id="sr-grp">${GROUPS.map((g) => `<button type="button" class="chip${saved.groups.includes(g.id) ? ' on' : ''}" data-v="${g.id}">${glyph(g.icon)}${g.label}</button>`).join('')}</div><p class="note" style="margin-top:6px">Rien de coché : tout est proposé.</p></div>
-    <div class="field"><span>Niveau</span><div class="checks" id="sr-lv">${CONFIG.levels.map((l) => `<button type="button" class="chip${saved.levels.includes(l.id) ? ' on' : ''}" data-v="${l.id}"><i class="lvdot" style="background:${LVC[l.id]};margin:0"></i>${l.label}</button>`).join('')}</div></div>
-    <div class="foot"><button type="button" class="btn" id="sr-cancel">Annuler</button><button type="button" class="btn main" id="sr-ok">Voir les résultats</button></div></div>`;
-  m.hidden = false;
-  const close = () => { m.hidden = true; m.innerHTML = ''; };
-  m.onclick = (e) => { if (e.target === m) close(); };
-  const showOrigin = () => { $('#sr-origin', m).textContent = origin ? origin.name : 'Pas encore défini'; };
-  showOrigin();
-  $('#sr-min', m).querySelectorAll('.chip').forEach((b) => { b.onclick = () => { $('#sr-min', m).querySelectorAll('.chip').forEach((x) => x.classList.toggle('on', x === b)); }; });
-  m.querySelectorAll('#sr-grp .chip, #sr-lv .chip').forEach((b) => { b.onclick = () => b.classList.toggle('on'); });
-  $('#sr-me', m).onclick = async () => {
-    $('#sr-me', m).disabled = true;
-    try { origin = await locateMe(); showOrigin(); } catch (err) { toast(err.message, 4500); $('#sr-townbox', m).hidden = false; }
-    $('#sr-me', m).disabled = false;
-  };
-  $('#sr-town', m).onclick = () => { $('#sr-townbox', m).hidden = false; $('#sr-q', m).focus(); };
-  let t;
-  $('#sr-q', m).oninput = () => {
-    clearTimeout(t);
-    t = setTimeout(async () => {
-      const q = $('#sr-q', m).value.trim();
-      if (q.length < 3) return;
-      try {
-        const res = (await searchRemote(q)).slice(0, 5);
-        $('#sr-list', m).innerHTML = res.map((r, i) => `<li><button type="button" data-i="${i}"><b>${esc(r.name)}</b> <span class="sub">${esc(r.where || '')}</span></button></li>`).join('') || '<li class="note">Aucune commune trouvée.</li>';
-        $('#sr-list', m).querySelectorAll('button').forEach((b) => {
-          b.onclick = () => { const r = res[+b.dataset.i]; origin = { lat: +r.lat.toFixed(4), lon: +r.lon.toFixed(4), name: r.name }; settings.set('origin', origin); showOrigin(); $('#sr-townbox', m).hidden = true; };
-        });
-      } catch { $('#sr-list', m).innerHTML = '<li class="note">Recherche de communes indisponible sans réseau.</li>'; }
-    }, 350);
-  };
-  $('#sr-cancel', m).onclick = close;
-  $('#sr-ok', m).onclick = async () => {
-    const q = {
-      minutes: +($('#sr-min .on', m) || { dataset: { v: 60 } }).dataset.v,
-      groups: [...m.querySelectorAll('#sr-grp .on')].map((b) => b.dataset.v),
-      levels: [...m.querySelectorAll('#sr-lv .on')].map((b) => b.dataset.v),
-    };
-    if (!origin) {
-      try { origin = await locateMe(); } catch (err) { toast(err.message, 4500); $('#sr-townbox', m).hidden = false; return; }
-    }
-    settings.set('search', q);
-    close();
-    paintSentence();
-    runSearch(q, origin);
-  };
-}
-
 async function driveTimes(origin, list) {
   // Un seul appel pour tous les lieux ; en cas d'échec on garde l'estimation.
   const coords = [origin, ...list].map((p) => p.lon.toFixed(5) + ',' + p.lat.toFixed(5)).join(';');
@@ -364,6 +398,6 @@ function paintResults() {
   bindPlaces(box, results, q.levels);
 }
 function bindHead() {
-  const e = document.getElementById('hm-edit'); if (e) e.onclick = openSearch;
+  const e = document.getElementById('hm-edit'); if (e) e.onclick = () => $('#hm-finder', host).scrollIntoView({ behavior: 'smooth', block: 'start' });
   const c = document.getElementById('hm-clear'); if (c) c.onclick = () => { runId++; lastSearch = null; $('#hm-results', host).innerHTML = ''; };
 }

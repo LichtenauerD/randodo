@@ -169,6 +169,7 @@ function draw(list, zoom) {
 // ---------- Tracés ----------
 // Violet : la seule teinte absente des cartes topographiques (routes rouges, courbes brunes, eau bleue, forêt verte).
 export const TRACE = '#8a1fd1';
+let traceSvg = null;
 // Flèches de sens de marche, posées à intervalle régulier le long du tracé.
 function arrows(pts) {
   let total = 0;
@@ -196,9 +197,36 @@ export function showTrace(h, opts = {}) {
       L.polyline(w.p, { ...style, interactive: false }).addTo(corridorLayer);
     }
   }
-  L.polyline(h.pts, { color: '#ffffff', weight: 10, opacity: 0.95, interactive: false }).addTo(traceLayer);
-  L.polyline(h.pts, { color: TRACE, weight: 5.5, opacity: 1, interactive: false }).addTo(traceLayer);
+  // Le tracé passe en SVG (le reste de la carte reste en canvas, plus léger) pour pouvoir l'animer.
+  if (!traceSvg) traceSvg = L.svg({ padding: 0.6 });
+  const R = { renderer: traceSvg };
+  const halo = L.polyline(h.pts, { ...R, color: '#ffffff', weight: 10, opacity: 0.95, interactive: false }).addTo(traceLayer);
+  const line = L.polyline(h.pts, { ...R, color: TRACE, weight: 5.5, opacity: 1, interactive: false }).addTo(traceLayer);
+  // Fil lumineux qui court dans le sens de marche.
+  const flow = L.polyline(h.pts, { ...R, color: '#ffffff', weight: 2.4, opacity: 0.9, interactive: false, className: 'trace-flow' }).addTo(traceLayer);
   arrows(h.pts);
+  // Le tracé (et son liseré blanc) se dessine à l'apparition, une fois la carte posée sur le tracé.
+  if (opts.animate !== false && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    const paths = [halo, line].map((l) => l._path).filter((x) => x && x.getTotalLength);
+    paths.forEach((x) => { x.style.opacity = '0'; });
+    if (flow._path) flow._path.style.opacity = '0';
+    const start = () => {
+      paths.forEach((path) => {
+        path.style.opacity = '';
+        const len = path.getTotalLength();
+        if (!len) return;
+        path.style.setProperty('--len', len);
+        path.classList.add('trace-draw');
+        const done = () => { path.classList.remove('trace-draw'); path.style.removeProperty('--len'); if (flow._path) flow._path.style.opacity = ''; };
+        path.addEventListener('animationend', done, { once: true });
+        setTimeout(() => map.once('zoomstart', done), 50);
+      });
+    };
+    let fired = false;
+    const go = () => { if (!fired) { fired = true; requestAnimationFrame(start); } };
+    map.once('moveend', go);
+    setTimeout(go, 450);
+  }
   const s = h.start || { lat: h.pts[0][0], lon: h.pts[0][1] };
   L.marker([s.lat, s.lon], { icon: L.divIcon({ className: '', html: '<div class="pin-start">D</div>', iconSize: [26, 26], iconAnchor: [13, 13] }), interactive: false }).addTo(traceLayer);
   if (opts.fit !== false) {
@@ -211,7 +239,7 @@ export function clearTrace() { traceLayer.clearLayers(); corridorLayer.clearLaye
 export function showMe(lat, lon, acc) {
   if (!meMarker) {
     meCircle = L.circle([lat, lon], { radius: acc || 20, color: '#1a73e8', weight: 1, fillOpacity: 0.12, interactive: false }).addTo(extra);
-    meMarker = L.marker([lat, lon], { icon: L.divIcon({ className: '', html: '<div class="me"></div>', iconSize: [20, 20], iconAnchor: [10, 10] }), interactive: false, zIndexOffset: 2000 }).addTo(extra);
+    meMarker = L.marker([lat, lon], { icon: L.divIcon({ className: '', html: '<div class="me"><i class="me-ring"></i></div>', iconSize: [20, 20], iconAnchor: [10, 10] }), interactive: false, zIndexOffset: 2000 }).addTo(extra);
   } else {
     meMarker.setLatLng([lat, lon]);
     meCircle.setLatLng([lat, lon]).setRadius(acc || 20);
