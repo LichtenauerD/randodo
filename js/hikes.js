@@ -20,7 +20,7 @@ function preselect(cands) {
   const bands = [[], [], []];
   for (const c of cands) {
     const km = c.meters / 1000;
-    if (km > 27) continue;
+    if (km > 27 || km < 3) continue; // ni expédition, ni simple promenade (circuits balisés compris)
     c.score = scoreOf(c);
     bands[km <= 8 ? 0 : km <= 15 ? 1 : 2].push(c);
   }
