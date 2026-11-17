@@ -2,6 +2,9 @@
 import { CONFIG } from './config.js';
 
 let preferred = 0;
+// Hors navigateur (calcul hebdomadaire sur GitHub) : les serveurs exigent qu'on s'identifie, et on reste poli (pas de requêtes en parallèle).
+const BOT = typeof window === 'undefined';
+const BOT_HEADERS = BOT ? { 'User-Agent': 'Randodo/1.4 (+https://github.com/LichtenauerD/randodo)' } : {};
 export const overpassState = { last: null, error: null };
 
 async function ask(idx, query, timeoutMs, outer) {
@@ -12,7 +15,7 @@ async function ask(idx, query, timeoutMs, outer) {
   try {
     const res = await fetch(servers[idx], {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8', ...BOT_HEADERS },
       body: 'data=' + encodeURIComponent(query),
       signal: ctl.signal,
     });
@@ -28,13 +31,13 @@ async function ask(idx, query, timeoutMs, outer) {
   }
 }
 
-export async function overpass(query, timeoutMs = 70000) {
+export async function overpass(query, timeoutMs = BOT ? 150000 : 70000) {
   const servers = CONFIG.overpass;
   const n = servers.length;
   let lastErr;
   const win = (r) => { preferred = r.idx; overpassState.last = servers[r.idx]; overpassState.error = null; return r.elements; };
   // Premier tour : le serveur habituel et le suivant en même temps ; le plus rapide gagne, l'autre est coupé.
-  if (n > 1) {
+  if (n > 1 && !BOT) {
     const stop = new AbortController();
     try {
       const r = await Promise.any([ask(preferred % n, query, timeoutMs, stop.signal), ask((preferred + 1) % n, query, timeoutMs, stop.signal)]);
@@ -43,7 +46,7 @@ export async function overpass(query, timeoutMs = 70000) {
     } catch (err) { lastErr = err.errors ? err.errors[0] : err; }
   }
   // Ensuite, les autres serveurs un par un, puis un second tour après une pause.
-  for (let k = n > 1 ? 2 : 0; k < n * 2; k++) {
+  for (let k = n > 1 && !BOT ? 2 : 0; k < n * 2; k++) {
     if (k === n) await new Promise((r) => setTimeout(r, 4000));
     try { return win(await ask((preferred + k) % n, query, timeoutMs)); } catch (err) { lastErr = err; }
   }

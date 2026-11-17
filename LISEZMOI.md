@@ -1,6 +1,6 @@
 # Randodo
 
-Choisir une randonnée simplement, puis la suivre sans réseau. Version 1.4.0.
+Choisir une randonnée simplement, puis la suivre sans réseau. Version 1.4.1.
 
 ## Mise en ligne (dix minutes, comme tes carnets)
 

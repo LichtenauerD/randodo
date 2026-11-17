@@ -4,7 +4,7 @@ const params = new URLSearchParams(location.search);
 // Mode test : ?mock=http://localhost:8765 remplace tous les services par un serveur local.
 const MOCK = params.get('mock') || '';
 
-export const VERSION = '1.4.0';
+export const VERSION = '1.4.1';
 
 export const CONFIG = {
   mock: MOCK,
@@ -26,7 +26,6 @@ export const CONFIG = {
     'https://overpass-api.de/api/interpreter',
     'https://overpass.kumi.systems/api/interpreter',
     'https://overpass.private.coffee/api/interpreter',
-    'https://overpass.osm.jp/api/interpreter',
     'https://maps.mail.ru/osm/tools/overpass/api/interpreter',
   ],
   // Temps de route (serveur de démonstration OSRM). En cas d'échec, l'appli estime la durée à partir de la distance.

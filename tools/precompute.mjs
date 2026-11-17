@@ -53,7 +53,7 @@ for (const site of order) {
     console.log(`ok   ${site.name} : ${r.hikes.length} randos (${((Date.now() - t0) / 1000).toFixed(0)} s)`);
   } catch (e) {
     failed++;
-    console.log(`raté ${site.name} : ${e.message}`);
+    console.log(`raté ${site.name} : ${e.message}${e.cause ? ' (' + (e.cause.code || e.cause.message) + ')' : ''}`);
   }
   if (pause) await new Promise((res) => setTimeout(res, pause));
   await writeFile(join(outDir, 'index.json'), JSON.stringify(index));

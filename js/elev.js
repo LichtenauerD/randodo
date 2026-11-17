@@ -13,9 +13,12 @@ export async function profile(pts) {
     const url = CONFIG.elevation + '?latitude=' + chunk.map((p) => p[0].toFixed(5)).join(',') + '&longitude=' + chunk.map((p) => p[1].toFixed(5)).join(',');
     let json, err;
     // Le service d'altitude répond parfois 429 ou 503 quand il est chargé : trois essais espacés.
-    for (const wait of [0, 2500, 6000]) {
+    // Hors navigateur (calcul hebdomadaire), on espace davantage pour ne pas être limité.
+    const bot = typeof window === 'undefined';
+    if (bot) await new Promise((r) => setTimeout(r, 700));
+    for (const wait of bot ? [0, 15000, 45000, 90000] : [0, 2500, 6000]) {
       if (wait) await new Promise((r) => setTimeout(r, wait));
-      try { json = await fetchJson(url, {}, 20000); break; } catch (e) { err = e; }
+      try { json = await fetchJson(url, bot ? { headers: { 'User-Agent': 'Randodo/1.4 (+https://github.com/LichtenauerD/randodo)' } } : {}, 20000); break; } catch (e) { err = e; }
     }
     if (!json) throw err;
     if (!json || !Array.isArray(json.elevation)) throw new Error('altitudes indisponibles');
