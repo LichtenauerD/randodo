@@ -4,7 +4,7 @@ import { overpass, qGraph, qRelation, qWays } from './overpass.js';
 import { buildGraph, proposeHikes, markedCircuits, corridor, stitch } from './router.js';
 import { profile, summarize } from './elev.js';
 import { knownPlaces } from './places.js';
-import { kv, settings, dist, simplify, walkMinutes, lineLength, bboxOf, uid, cumulative } from './util.js';
+import { kv, settings, dist, simplify, walkMinutes, lineLength, bboxOf, uid, cumulative, slugOf } from './util.js';
 
 const TTL = 30 * 86400000;
 const FORMAT = 4;
@@ -52,6 +52,21 @@ export async function hikesFor(place, onStep = () => {}, force = false) {
   if (!force) {
     const cached = await kv.get(key);
     if (cached && cached.v === FORMAT && Date.now() - cached.t < (cached.noEle ? 15 * 60000 : TTL)) return cached;
+  }
+  // Lieux du catalogue : randos précalculées chaque semaine, servies avec l'appli (instantané).
+  if (place.curated && !force) {
+    try {
+      const res = await fetch('data/hikes/' + slugOf(place.name) + '.json', { cache: 'no-cache' });
+      if (res.ok) {
+        const pre = await res.json();
+        if (pre.v === FORMAT && pre.hikes && pre.hikes.length) {
+          for (const h of pre.hikes) h.placeId = place.id;
+          const out = { ...pre, t: Date.now(), pre: true };
+          await kv.set(key, out);
+          return out;
+        }
+      }
+    } catch { /* pas de fichier : on calcule sur place */ }
   }
   onStep('Chargement des sentiers autour du lieu');
   const els = await overpass(qGraph(place.lat, place.lon, CONFIG.graphRadius));

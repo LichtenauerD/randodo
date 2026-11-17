@@ -121,16 +121,26 @@ export async function openPlace(place, opts = {}) {
   const my = ++token;
   current = { place, data: null, hike: null, more: false, back: null };
   bus.emit('sheet', true);
-  frame(headHtml(place) + `<div class="section"><h3>Randonnées</h3><div id="hikes"><div class="loading"><span class="spin"></span><span id="step">Préparation</span></div></div></div>
+  frame(headHtml(place) + `<div class="section"><h3>Randonnées</h3><div id="hikes"><div class="loading"><span class="spin"></span><span id="step">Préparation</span></div><p class="note" id="slowhint" hidden>Les serveurs gratuits de sentiers sont chargés en ce moment : ça arrive. Les lieux de la sélection, cerclés de jaune sur la carte, s'ouvrent tout de suite.</p></div></div>
     <div class="section"><h3>Sur les plateformes</h3>${linksHtml(place)}<p class="note" style="margin-top:8px">Pour lire les avis, les photos et les variantes de la communauté.</p></div>`);
   bindHead(place);
   if (opts.focus !== false) focus(place.lat, place.lon, Math.max(map.getZoom(), 13), 120);
+  // Compteur de secondes pendant le calcul, et un mot d'explication s'il traîne.
+  const t0 = Date.now(); let stepText = 'Préparation';
+  const tick = setInterval(() => {
+    if (my !== token || !$('#step')) return clearInterval(tick);
+    const s = Math.round((Date.now() - t0) / 1000);
+    $('#step').textContent = stepText + (s >= 3 ? ` · ${s} s` : '');
+    if (s >= 12 && $('#slowhint')) $('#slowhint').hidden = false;
+  }, 1000);
   try {
-    const data = await hikesFor(place, (s) => { if (my === token && $('#step')) $('#step').textContent = s; }, opts.force);
+    const data = await hikesFor(place, (s) => { stepText = s; if (my === token && $('#step')) $('#step').textContent = s; }, opts.force);
+    clearInterval(tick);
     if (my !== token) return;
     current.data = data;
     renderHikes();
   } catch (err) {
+    clearInterval(tick);
     if (my !== token) return;
     $('#hikes').innerHTML = `<div class="sign-empty">${esc(err.message)}. Vérifie le réseau puis réessaie.</div><button type="button" class="more" id="retry">Réessayer</button>`;
     $('#retry').onclick = () => openPlace(place, { focus: false, force: true });
@@ -267,18 +277,19 @@ export function openHike(h, ctx = {}) {
     const r = await shareGpx(h);
     if (r === 'telechargement') toast('Trace téléchargée : ouvre le fichier avec Organic Maps.');
   };
+  // Les sentiers voisins (carte de terrain hors ligne) se chargent en arrière-plan : on n'attend pas les serveurs.
+  const corridorLater = () => ensureCorridor(h).then(() => store.saveHike(h)).catch(() => {});
   $('#a-save').onclick = async () => {
     const b = $('#a-save');
-    b.disabled = true;
-    try { await ensureCorridor(h); } catch { /* la trace seule suffit, la carte de terrain manquera */ }
     await store.saveHike(h);
-    b.disabled = false; b.innerHTML = IC.save + 'Gardée hors ligne';
+    b.innerHTML = IC.save + 'Gardée hors ligne';
     toast('Trace gardée dans l\'onglet Traces, utilisable sans réseau.');
+    corridorLater();
   };
   $('#a-go').onclick = async () => {
-    try { await ensureCorridor(h); } catch { /* hors ligne : on guide sur la trace seule */ }
     await store.saveHike(h);
     startGuide(h);
+    corridorLater();
   };
   $('#a-done').onclick = () => openLogForm({ place: ctx.place || h.place, hike: h });
 }

@@ -1,11 +1,10 @@
 // Accueil : suggestions de la semaine, idées repérées sur le web, recherche guidée par temps de route.
 import { CONFIG, TYPES } from './config.js';
 import { SITES, notablePlaces, imageOf, fetchImages, searchRemote } from './places.js';
-import { hikesFor } from './hikes.js';
 import { store, want, saveWant } from './state.js';
 import { openPlace } from './sheet.js';
 import { glyph } from './map.js';
-import { kv, settings, dist, esc, fetchJson, toast, fmtKm } from './util.js';
+import { kv, settings, dist, esc, fetchJson, toast, fmtKm, slugOf } from './util.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const LVC = { facile: 'var(--facile)', moyenne: 'var(--moyenne)', difficile: 'var(--difficile)' };
@@ -311,19 +310,28 @@ export async function runSearch(q, origin) {
   try { await driveTimes(origin, top); approx = false; } catch { /* estimation conservée */ }
   if (my !== runId) return;
   const results = top.filter((p) => p._min <= q.minutes * 1.05).sort((a, b) => (b.curated ? 40 : 0) + b.score - b._min / 4 - ((a.curated ? 40 : 0) + a.score - a._min / 4)).slice(0, 30);
-  lastSearch = { q, origin, results, note, approx, busy: false, levels: {} };
+  // Niveaux des lieux du catalogue : lus dans l'index précalculé, sans interroger les serveurs de sentiers.
+  const idx = await hikeIndex();
+  if (my !== runId) return;
+  const levels = {};
+  for (const p of results) {
+    const e = p.curated && idx[slugOf(p.name)];
+    if (e) levels[p.id] = e.map((h) => ({ level: h.level, meters: h.km * 1000 }));
+  }
+  // Le niveau demandé passe devant : d'abord les lieux qui ont une boucle de ce niveau.
+  if (q.levels.length) {
+    const fit = (p) => (levels[p.id] ? (levels[p.id].some((h) => q.levels.includes(h.level)) ? 0 : 2) : 1);
+    results.sort((a, b) => fit(a) - fit(b));
+  }
+  lastSearch = { q, origin, results, note, approx, busy: false, levels };
   paintResults();
   fetchImages(results.slice(0, 14), () => { if (my === runId) paintResults(); });
-  // Niveaux disponibles pour les quatre premiers lieux, calculés l'un après l'autre.
-  for (const p of results.slice(0, 4)) {
-    if (my !== runId) return;
-    try {
-      const data = await hikesFor(p);
-      if (my !== runId) return;
-      lastSearch.levels[p.id] = data.hikes.map((h) => ({ level: h.level, meters: h.meters }));
-    } catch { lastSearch.levels[p.id] = null; }
-    paintResults();
-  }
+}
+
+let INDEX = null;
+function hikeIndex() {
+  if (!INDEX) INDEX = fetch('data/hikes/index.json', { cache: 'no-cache' }).then((r) => (r.ok ? r.json() : {})).catch(() => ({}));
+  return INDEX;
 }
 
 function levelBadges(p) {

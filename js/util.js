@@ -228,3 +228,8 @@ export function toast(msg, ms = 3200) {
   clearTimeout(toast.t);
   toast.t = setTimeout(() => el.classList.remove('on'), ms);
 }
+
+// Nom de fichier stable pour un lieu du catalogue (randos précalculées).
+export function slugOf(name) {
+  return norm(name).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}

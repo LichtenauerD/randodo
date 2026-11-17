@@ -4,36 +4,48 @@ import { CONFIG } from './config.js';
 let preferred = 0;
 export const overpassState = { last: null, error: null };
 
-export async function overpass(query, timeoutMs = 70000) {
+async function ask(idx, query, timeoutMs, outer) {
   const servers = CONFIG.overpass;
-  let lastErr;
-  for (let k = 0; k < servers.length * 2; k++) {
-    if (k === servers.length) await new Promise((r) => setTimeout(r, 4000));
-    const idx = (preferred + k) % servers.length;
-    const ctl = new AbortController();
-    const timer = setTimeout(() => ctl.abort(), timeoutMs);
-    try {
-      const res = await fetch(servers[idx], {
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), timeoutMs);
+  if (outer) outer.addEventListener('abort', () => ctl.abort());
+  try {
+    const res = await fetch(servers[idx], {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
-        body: 'data=' + encodeURIComponent(query),
-        signal: ctl.signal,
-      });
-      if (res.status === 429 || res.status >= 500) await res.text().catch(() => {});
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      const json = await res.json();
-      if (!json || !Array.isArray(json.elements)) throw new Error('réponse inattendue');
-      // Overpass signale un dépassement de temps dans « remark » tout en répondant 200.
-      if (json.remark && /timed out|out of memory/i.test(json.remark) && !json.elements.length) throw new Error('délai dépassé côté serveur');
-      preferred = idx;
-      overpassState.last = servers[idx];
-      overpassState.error = null;
-      return json.elements;
-    } catch (err) {
-      lastErr = err;
-    } finally {
-      clearTimeout(timer);
-    }
+      body: 'data=' + encodeURIComponent(query),
+      signal: ctl.signal,
+    });
+    if (res.status === 429 || res.status >= 500) await res.text().catch(() => {});
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const json = await res.json();
+    if (!json || !Array.isArray(json.elements)) throw new Error('réponse inattendue');
+    // Overpass signale un dépassement de temps dans « remark » tout en répondant 200.
+    if (json.remark && /timed out|out of memory/i.test(json.remark) && !json.elements.length) throw new Error('délai dépassé côté serveur');
+    return { idx, elements: json.elements };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+export async function overpass(query, timeoutMs = 70000) {
+  const servers = CONFIG.overpass;
+  const n = servers.length;
+  let lastErr;
+  const win = (r) => { preferred = r.idx; overpassState.last = servers[r.idx]; overpassState.error = null; return r.elements; };
+  // Premier tour : le serveur habituel et le suivant en même temps ; le plus rapide gagne, l'autre est coupé.
+  if (n > 1) {
+    const stop = new AbortController();
+    try {
+      const r = await Promise.any([ask(preferred % n, query, timeoutMs, stop.signal), ask((preferred + 1) % n, query, timeoutMs, stop.signal)]);
+      stop.abort();
+      return win(r);
+    } catch (err) { lastErr = err.errors ? err.errors[0] : err; }
+  }
+  // Ensuite, les autres serveurs un par un, puis un second tour après une pause.
+  for (let k = n > 1 ? 2 : 0; k < n * 2; k++) {
+    if (k === n) await new Promise((r) => setTimeout(r, 4000));
+    try { return win(await ask((preferred + k) % n, query, timeoutMs)); } catch (err) { lastErr = err; }
   }
   overpassState.error = String(lastErr && lastErr.message || lastErr);
   throw new Error('Les serveurs de données ne répondent pas (' + overpassState.error + ')');
