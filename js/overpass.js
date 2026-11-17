@@ -7,7 +7,8 @@ export const overpassState = { last: null, error: null };
 export async function overpass(query, timeoutMs = 70000) {
   const servers = CONFIG.overpass;
   let lastErr;
-  for (let k = 0; k < servers.length; k++) {
+  for (let k = 0; k < servers.length * 2; k++) {
+    if (k === servers.length) await new Promise((r) => setTimeout(r, 4000));
     const idx = (preferred + k) % servers.length;
     const ctl = new AbortController();
     const timer = setTimeout(() => ctl.abort(), timeoutMs);
@@ -18,6 +19,7 @@ export async function overpass(query, timeoutMs = 70000) {
         body: 'data=' + encodeURIComponent(query),
         signal: ctl.signal,
       });
+      if (res.status === 429 || res.status >= 500) await res.text().catch(() => {});
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const json = await res.json();
       if (!json || !Array.isArray(json.elements)) throw new Error('réponse inattendue');
