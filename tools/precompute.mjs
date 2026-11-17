@@ -30,11 +30,13 @@ for (const site of SITES) {
   try {
     const r = await hikesFor(site, () => {}, true);
     if (!r.hikes.length || r.noEle) throw new Error(r.reason || 'altitudes indisponibles');
+    // Sortie identique d'une semaine à l'autre si les sentiers n'ont pas changé : GitHub ne garde alors rien de nouveau.
+    r.hikes.forEach((h, i) => { h.id = `${slug}-${i + 1}`; });
     for (const h of r.hikes) {
       h.pts = round(h.pts);
       h.corridor = null; // les sentiers voisins se chargent à la demande (Garder hors ligne, Suivre)
     }
-    const data = { v: r.v, built: new Date().toISOString().slice(0, 10), hikes: r.hikes, passing: r.passing, partial: r.partial, reason: r.reason, noEle: false };
+    const data = { v: r.v, hikes: r.hikes, passing: r.passing, partial: r.partial, reason: r.reason, noEle: false };
     await writeFile(join(outDir, slug + '.json'), JSON.stringify(data));
     index[slug] = r.hikes.map((h) => ({ level: h.level, km: +(h.meters / 1000).toFixed(1), up: h.up, min: h.minutes }));
     done++;
