@@ -120,3 +120,17 @@ boot().catch((err) => {
   document.body.insertAdjacentHTML('beforeend', `<div style="position:fixed;inset:auto 10px 80px;z-index:999;background:#c23a2b;color:#fff;padding:12px 14px;border-radius:12px">Randodo n'a pas pu démarrer : ${esc(err.message)}</div>`);
   console.error(err);
 });
+
+// iOS 26, appli installée : après fermeture du clavier, la page peut rester décalée et laisser une bande vide en bas.
+// On remet la page en place et on recalcule la taille de la carte.
+function healViewport() {
+  setTimeout(() => {
+    if (document.activeElement && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) return;
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0; document.body.scrollTop = 0;
+    map.invalidateSize();
+  }, 120);
+}
+document.addEventListener('focusout', healViewport);
+if (window.visualViewport) window.visualViewport.addEventListener('resize', healViewport);
+window.addEventListener('orientationchange', healViewport);

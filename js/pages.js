@@ -313,10 +313,10 @@ async function renderCommunity(body) {
 function renderSettings() {
   const p = page();
   p.innerHTML = `<h2>Réglages</h2>
-    <div class="card"><h3>Groupe</h3><p class="meta">Pour l'onglet « Communauté » de l'historique.</p>
+    <div class="card"><h3>Groupe</h3><p class="meta">Pour voir les randos de tes amis dans l'onglet « Communauté ». L'adresse du groupe vient du script Google (voir le mode d'emploi) ; tant qu'elle est vide, tout le reste de l'appli fonctionne.</p>
       <label class="field"><span>Mon prénom</span><input type="text" id="s-pseudo" value="${esc(settings.get('pseudo', ''))}" placeholder="Affiché à côté de tes randos" maxlength="24"></label>
       <label class="field"><span>Adresse du groupe</span><input type="url" id="s-url" value="${esc(settings.get('communityUrl', '') || CONFIG.communityUrl)}" placeholder="https://script.google.com/macros/s/…/exec" autocapitalize="off" autocorrect="off"></label>
-      <div class="row"><button type="button" class="btn small" id="s-test">Tester l'adresse</button></div></div>
+      <div class="row"><button type="button" class="btn small" id="s-test">Vérifier que le groupe répond</button></div></div>
     <div class="card"><h3>Liens vers les plateformes</h3>
       <label class="switch" style="margin-top:6px"><span>Liens directs Komoot et AllTrails</span><input type="checkbox" id="s-direct"${settings.get('directLinks', true) ? ' checked' : ''}></label>
       <p class="meta" style="margin-top:6px">Si un lien direct n'ouvre pas la bonne page, décoche : les boutons lanceront une recherche web limitée au site.</p></div>

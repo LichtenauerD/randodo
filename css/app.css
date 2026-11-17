@@ -302,3 +302,5 @@ a.btn { text-decoration: none; color: inherit; }
 
 .credit { margin-top: 6px; font-size: 11px; opacity: .7; }
 .signature { margin: 28px 0 12px; text-align: center; font-size: 12px; opacity: .45; letter-spacing: .02em; }
+.hud-actions { display: flex; gap: 8px; margin-top: 10px; }
+.hud-actions button, .hud-actions a { flex: 1; padding: 9px 10px; border: 0; border-radius: 10px; background: rgba(255, 255, 255, 0.92); color: #3d2600; font: inherit; font-size: 0.95rem; font-weight: 600; text-align: center; text-decoration: none; }

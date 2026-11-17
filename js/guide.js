@@ -51,12 +51,28 @@ function beep() {
   } catch { /* son indisponible */ }
 }
 
-function alertBox(text, kind) {
+function alertBox(text, kind, actions = '') {
   const a = document.getElementById('hud-alert');
   if (!a) return;
-  if (!text) { a.hidden = true; return; }
-  a.hidden = false; a.className = 'hud-alert' + (kind ? ' ' + kind : ''); a.textContent = text;
+  if (!text) { a.hidden = true; a.dataset.k = ''; return; }
+  a.hidden = false; a.className = 'hud-alert' + (kind ? ' ' + kind : '');
+  // On ne reconstruit les boutons que si le contenu change, pour qu'un appui ne tombe pas entre deux positions GPS.
+  const k = text + '|' + actions;
+  if (a.dataset.k === k) return;
+  a.dataset.k = k;
+  a.innerHTML = `<span>${esc(text)}</span>${actions ? `<div class="hud-actions">${actions}</div>` : ''}`;
 }
+
+// Montre le départ de la trace sur la carte, sans que le suivi GPS ne ramène la vue sur soi.
+function showStart() {
+  if (!g) return;
+  g.follow = false;
+  map.setView(g.pts[0], Math.max(map.getZoom(), 15), { animate: true });
+}
+
+document.addEventListener('click', (e) => {
+  if (e.target.closest('#hud-start')) showStart();
+});
 
 function onPos(lat, lon, acc) {
   if (!g || g.paused) return;
@@ -71,7 +87,9 @@ function onPos(lat, lon, acc) {
   }
   const precise = !acc || acc < 45;
   if (loc.d > 300 && g.along < 80 && !g.started) {
-    alertBox(`Rejoins le départ : tu es à ${fmtM(dist(p, g.pts[0]))} à vol d'oiseau.`, 'info');
+    const s = g.pts[0];
+    alertBox(`Rejoins le départ : tu es à ${fmtM(dist(p, s))} à vol d'oiseau.`, 'info',
+      `<button type="button" id="hud-start">Voir le départ</button><a href="https://maps.apple.com/?daddr=${s[0].toFixed(5)},${s[1].toFixed(5)}" target="_blank" rel="noopener">Itinéraire</a>`);
   } else if (loc.d > CONFIG.offRoute && precise) {
     g.offCount++;
     if (g.offCount >= 2) {

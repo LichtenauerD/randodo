@@ -1,6 +1,6 @@
 # Randodo
 
-Choisir une randonnée simplement, puis la suivre sans réseau. Version 1.3.4.
+Choisir une randonnée simplement, puis la suivre sans réseau. Version 1.3.5.
 
 ## Mise en ligne (dix minutes, comme tes carnets)
 
@@ -20,7 +20,7 @@ L'onglet « Communauté » a besoin d'un endroit commun. C'est une feuille Googl
 1. Crée une feuille Google vide (par exemple « Randodo, randos du groupe »).
 2. Menu **Extensions > Apps Script**. Efface le contenu affiché, colle celui de `apps-script/Code.gs`, enregistre.
 3. **Déployer > Nouveau déploiement**, type **Application Web**. « Exécuter en tant que » : **Moi**. « Qui a accès » : **Tout le monde**. Clique **Déployer** et accepte l'autorisation demandée.
-4. Copie l'adresse qui finit par `/exec`. Dans Randodo : **Réglages > Adresse du groupe**, colle-la, puis **Tester l'adresse**.
+4. Copie l'adresse qui finit par `/exec`. Dans Randodo : **Réglages > Adresse du groupe**, colle-la, puis **Vérifier que le groupe répond**.
 5. Pour tes proches : colle la même adresse dans `js/config.js`, à la ligne `communityUrl: ''`, et redépose ce fichier sur GitHub. L'appli leur demandera simplement leur prénom au premier lancement.
 
 À savoir : toute personne qui connaît cette adresse peut lire les randos partagées et en ajouter. Seul l'appareil qui a partagé une rando peut la modifier ou la retirer. Tu peux aussi corriger ou supprimer une ligne directement dans la feuille.
