@@ -1,0 +1,16 @@
+{
+  "name": "Randodo",
+  "short_name": "Randodo",
+  "description": "Choisir une randonnée simplement, puis la suivre sans réseau.",
+  "lang": "fr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#8f8960",
+  "theme_color": "#173b2f",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}

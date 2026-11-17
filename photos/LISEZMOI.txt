@@ -1,0 +1,10 @@
+Dossier des photos de lieux.
+
+Dépose ici un fichier par lieu (jpg ou webp, ~800 px de large suffit), par exemple photos/hohneck.jpg.
+Puis, dans data/photos.js, ajoute une ligne en face du nom exact du lieu :
+
+  'Hohneck': { file: 'photos/hohneck.jpg', credit: 'Dorian', url: '' },
+
+Règles retenues : une photo doit montrer le lieu réellement, sans mise en scène ni personne au premier plan.
+Une photo sous licence avec attribution (CC BY ou CC BY-SA) doit porter son crédit dans la ligne (credit) et
+son adresse dans url. Les photos d'articles de blog ne se reprennent pas : on met un lien vers le blog à la place.
