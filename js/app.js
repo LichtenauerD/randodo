@@ -155,3 +155,12 @@ window.addEventListener('scroll', () => {
 }, { passive: true });
 if (window.visualViewport) window.visualViewport.addEventListener('resize', healViewport);
 window.addEventListener('orientationchange', healViewport);
+
+// Détecte une fenêtre plus courte que l'écran (bug iOS 26 en mode installé) pour ne pas compter deux fois la barre d'accueil.
+function checkViewport() {
+  const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+  const full = innerWidth < innerHeight ? Math.max(screen.width, screen.height) : Math.min(screen.width, screen.height);
+  document.documentElement.classList.toggle('short-vp', !!standalone && full - innerHeight > 20);
+}
+checkViewport();
+addEventListener('resize', checkViewport);

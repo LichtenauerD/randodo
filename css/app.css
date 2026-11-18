@@ -24,7 +24,9 @@
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-html, body { height: 100%; margin: 0; overflow: hidden; background: var(--brume); color: var(--encre); font: 16px/1.4 var(--text); overscroll-behavior: none; }
+html { background: var(--sapin); }
+body { background: var(--brume); }
+html, body { height: 100%; margin: 0; overflow: hidden; color: var(--encre); font: 16px/1.4 var(--text); overscroll-behavior: none; }
 button, input, select, textarea { font: inherit; color: inherit; }
 button { cursor: pointer; border: 0; background: none; padding: 0; }
 h1, h2, h3 { font-family: var(--sign); font-weight: 700; margin: 0; line-height: 1.12; letter-spacing: 0.005em; }
@@ -623,3 +625,8 @@ ol.grades li span { display: flex; flex-direction: column; } ol.grades small { c
 .gu-card .btn { width: 100%; }
 @keyframes guPop { 0% { transform: scale(.3) rotate(-12deg); opacity: 0; } 60% { transform: scale(1.12) rotate(4deg); opacity: 1; } 100% { transform: scale(1) rotate(0); } }
 .gc-dodo { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; flex: none; } .gc-dodo figcaption { font: 600 .74rem var(--sign); color: var(--sapin); white-space: nowrap; }
+
+/* iOS 26 en mode installé : la fenêtre s'arrête parfois au-dessus de la barre d'accueil. La bande restante prend la couleur de la barre d'onglets. */
+#tabs::after { content: ""; position: absolute; left: 0; right: 0; top: 100%; height: 120px; background: var(--sapin); }
+html.short-vp { --tabs: 58px; }
+html.short-vp #tabs { padding-bottom: 0; }
