@@ -1,7 +1,7 @@
 // Mode hors ligne de Randodo. Le stockage de cache est commun à toutes les applis du même site GitHub Pages :
 // seuls les caches préfixés « randodo- » sont touchés.
 // L'appli elle-même est mise en cache, les tuiles déjà vues aussi (jamais téléchargées d'avance).
-const VERSION = 'randodo-1.8.2';
+const VERSION = 'randodo-1.8.3';
 const SHELL = [
   './', 'index.html', 'manifest.webmanifest', 'css/app.css',
   'js/app.js', 'js/config.js', 'js/util.js', 'js/state.js', 'js/overpass.js', 'js/places.js', 'js/router.js',
@@ -46,7 +46,7 @@ self.addEventListener('fetch', (e) => {
   const url = new URL(req.url);
   if (url.origin === self.location.origin) {
     // L'appli : réseau d'abord pour recevoir les mises à jour, cache si le réseau manque.
-    e.respondWith(fetch(req).then((res) => {
+    e.respondWith(fetch(req, { cache: 'no-cache' }).then((res) => {
       if (res.ok) caches.open(VERSION).then((c) => c.put(req, res.clone())).catch(() => {});
       return res;
     }).catch(() => caches.match(req, { ignoreSearch: true }).then((hit) => hit || caches.match('index.html'))));

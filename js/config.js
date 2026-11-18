@@ -4,7 +4,7 @@ const params = new URLSearchParams(location.search);
 // Mode test : ?mock=http://localhost:8765 remplace tous les services par un serveur local.
 const MOCK = params.get('mock') || '';
 
-export const VERSION = '1.8.2';
+export const VERSION = '1.8.3';
 
 export const CONFIG = {
   mock: MOCK,
@@ -98,6 +98,8 @@ export function levelOf(km, up) {
   return 'difficile';
 }
 
+// Petit pictogramme par type de lieu, pour les listes.
+export const EMOJI = { sommet: '⛰️', vue: '🔭', lac: '💧', cascade: '🌊', rocher: '🪨', chateau: '🏰', grotte: '🕳️', tourbiere: '🌲', gorge: '🏞️', refuge: '🛖', lieu: '📍' };
 export const TYPES = {
   sommet: { label: 'Sommets', one: 'Sommet', color: '#7a5a3a' },
   vue: { label: 'Points de vue', one: 'Point de vue', color: '#b0762a' },

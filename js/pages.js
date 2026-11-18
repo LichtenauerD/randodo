@@ -1,7 +1,7 @@
 // Pages : traces, historique (mes randos, communauté, envies), réglages, diagnostic, envie du jour, saisie d'une rando.
 import { shareApp } from './share.js';
 import { startTour, maybeTour } from './tour.js';
-import { CONFIG, TYPES, VERSION } from './config.js';
+import { CONFIG, TYPES, EMOJI, VERSION } from './config.js';
 import { store, want, saveWant, wantActive, DEFAULT_WISH, bus } from './state.js';
 import { openHike, openPlace, frDate } from './sheet.js';
 import { renderObjectifs } from './objectifs.js';
@@ -421,6 +421,21 @@ async function renderCommunity(body) {
   }
 }
 
+// Lieux regroupés par zone, puis par type (avec son pictogramme).
+const ZONES = ['Vosges', 'Vosges du Nord', 'Forêt-Noire', 'Kaiserstuhl', 'Jura alsacien', 'Jura', 'Suisse'];
+function placesByZone(places) {
+  const zones = [...new Set(places.map((s) => s.massif))].sort((a, b) => ((ZONES.indexOf(a) + 1) || 99) - ((ZONES.indexOf(b) + 1) || 99));
+  const order = Object.keys(TYPES);
+  return zones.map((z) => {
+    const here = places.filter((s) => s.massif === z);
+    const types = [...new Set(here.map((s) => s.type))].sort((a, b) => order.indexOf(a) - order.indexOf(b));
+    return `<div class="pf-zone"><h4>${esc(z)} <small>${here.length}</small></h4>${types.map((t) => {
+      const list = here.filter((s) => s.type === t);
+      return `<div class="pf-type"><span class="pf-t">${EMOJI[t] || '📍'} ${esc((TYPES[t] || TYPES.lieu).label)}</span><ul>${list.map((s) => `<li>${esc(s.name)}</li>`).join('')}</ul></div>`;
+    }).join('')}</div>`;
+  }).join('');
+}
+
 // Profil d'un membre : son Didou, son grade, ses lieux faits et ses randos partagées.
 function openProfile(m, entries) {
   if (!m) return;
@@ -433,7 +448,7 @@ function openProfile(m, entries) {
     <div class="totals"><div><b>${m.lieux || 0}</b><span>lieu${(m.lieux || 0) > 1 ? 'x' : ''} fait${(m.lieux || 0) > 1 ? 's' : ''}</span></div><div><b>${mine.length}</b><span>rando${mine.length > 1 ? 's' : ''}</span></div><div><b>${Math.round(km)}</b><span>km</span></div></div>
     <h3>Ses randos</h3>
     ${mine.map((e, i) => `<div class="pf-row" data-i="${i}"><b>${lvDot(e.level)}${esc(e.placeName)}</b><small>${frDate(e.date)}${e.km ? ', ' + String(Math.round(e.km * 10) / 10).replace('.', ',') + ' km' : ''}${e.rating ? ', ' + e.rating + '/5' : ''}</small>${e.note ? `<p>${esc(e.note)}</p>` : ''}${e.lat != null ? '<button type="button" class="btn small" data-a="map">Voir sur la carte</button>' : ''}</div>`).join('') || '<p class="meta">Aucune rando partagée pour l\'instant.</p>'}
-    ${places.length ? `<h3>Ses lieux cochés</h3><p class="pf-places">${places.map((s) => esc(s.name)).join(', ')}</p>` : ''}
+    ${places.length ? `<h3>Ses lieux cochés</h3>${placesByZone(places)}` : ''}
     <div class="foot"><button type="button" class="btn main" id="pf-close" style="width:100%">Fermer</button></div></div>`);
   box.classList.add('tall');
   $('#pf-close', box).onclick = closeModal;
@@ -530,6 +545,16 @@ async function runDiag(ul) {
     paint();
   };
   const img = (src) => new Promise((ok, ko) => { const i = new Image(); i.onload = () => ok(); i.onerror = () => ko(new Error('image refusée')); i.src = src; setTimeout(() => ko(new Error('délai dépassé')), 12000); });
+  await run('Écran', async () => {
+    const st = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+    const probe = document.createElement('div');
+    probe.style.cssText = 'position:fixed;visibility:hidden;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)';
+    document.body.appendChild(probe);
+    const cs = getComputedStyle(probe), ins = parseInt(cs.paddingTop) + '/' + parseInt(cs.paddingBottom);
+    probe.remove();
+    const meta = (document.querySelector('meta[name=apple-mobile-web-app-status-bar-style]') || {}).content;
+    return `${st ? 'installée' : 'navigateur'}, fenêtre ${innerHeight}/${screen.height} px, marges ${ins}, barre ${meta}`;
+  });
   for (const url of CONFIG.overpass) {
     await run('Sentiers et lieux : ' + new URL(url).host, async () => {
       const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' }, body: 'data=' + encodeURIComponent('[out:json][timeout:15];node["natural"="peak"]["name"](48.02,7.00,48.05,7.04);out 3;') });

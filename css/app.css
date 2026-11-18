@@ -639,3 +639,7 @@ details.adv { margin-top: 10px; } details.adv summary { color: var(--gris); font
 #modal .box.tall .profile { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding-bottom: calc(20px + env(safe-area-inset-bottom)); }
 .profile .foot { position: sticky; bottom: 0; background: var(--papier); padding-top: 10px; }
 .profile .foot .btn { flex: 1; }
+.pf-zone { margin: 4px 0 12px; }
+.pf-zone h4 { margin: 10px 0 6px; font-size: .95rem; } .pf-zone h4 small { color: var(--gris); font-weight: 500; margin-left: 4px; }
+.pf-type { margin: 0 0 8px; } .pf-t { font-size: .85rem; color: var(--gris); font-weight: 600; }
+.pf-type ul { margin: 3px 0 0; padding-left: 26px; } .pf-type li { font-size: .92rem; line-height: 1.45; }
