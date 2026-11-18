@@ -16,6 +16,7 @@ function roadbook(h, c) {
   if (c.source === 'balise') { h.marks = c.symbol ? [[0, Math.round(total), c.symbol, c.name || '']] : []; h.turns = []; return; }
   const k = c.meters ? total / c.meters : 1;
   h.marks = (c.marks || []).map(([a, b, s, n]) => [Math.round(a * k), Math.round(b * k), s, n]);
+  h.unsureRuns = (c.unsureRuns || []).map(([a, b]) => [Math.round(a * k), Math.round(b * k)]);
   // Chaque intersection est projetée sur la trace, en avançant toujours : une boucle qui se recroise ne revient pas en arrière.
   h.turns = [];
   for (const [la, lo, code, at0] of c.turns || []) {
@@ -144,6 +145,7 @@ export async function hikesFor(place, onStep = () => {}, force = false) {
       start: c.start ? { name: c.start.name, lat: c.start.lat, lon: c.start.lon, kind: c.start.kind } : { name: '', lat: c.pts[0][0], lon: c.pts[0][1], kind: 'balise' },
       via: c.via || null, pts: simplify(c.pts, 2), meters: c.meters,
       road: c.road || 0, marked: c.marked ?? 1, alpine: !!c.alpine, demanding: !!c.demanding,
+      unsure: c.unsure || 0, maxUnsure: c.maxUnsure || 0,
       relId: c.source === 'balise' ? c.id : null, symbol: c.symbol || '', website: c.website || '',
     };
     roadbook(h, c);

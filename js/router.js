@@ -10,6 +10,26 @@ const FACTOR = {
 const ROADS = new Set(['living_street', 'residential', 'service', 'road', 'unclassified', 'tertiary', 'secondary', 'cycleway']);
 const ALPINE = new Set(['alpine_hiking', 'demanding_alpine_hiking', 'difficult_alpine_hiking']);
 
+// Fiabilité d'un chemin sur le terrain. Un sentier est « confirmé » s'il est balisé, ou si c'est un chemin
+// forestier, une route, un trottoir, un escalier, ou un sentier dont la carte décrit l'état (nom, revêtement,
+// visibilité, difficulté). Un sentier sans aucune de ces informations est « incertain » : il existe peut-être
+// à peine sur le terrain. Les chemins à éviter tout à fait sont écartés du réseau.
+export const LIMITS = { maxUnsure: 1000, unsure: 0.3 };
+export function wayExcluded(t, marked) {
+  if (/^(bad|horrible|no)$/.test(t.trail_visibility || '') && !marked) return true;
+  if (t.informal === 'yes' && !marked) return true;
+  if (/^(no|private)$/.test(t.foot || '') || /^(no|private)$/.test(t.access || '')) return true;
+  if (t.disused === 'yes' || t.abandoned === 'yes' || t['disused:highway'] || t['abandoned:highway']) return true;
+  if (/^(demanding_alpine_hiking|difficult_alpine_hiking)$/.test(t.sac_scale || '')) return true;
+  if (t.highway === 'via_ferrata' || t.via_ferrata_scale || t.climbing) return true;
+  return false;
+}
+export function wayConfirmed(t, marked) {
+  if (marked) return true;
+  if (t.highway !== 'path' && t.highway !== 'bridleway') return true;
+  return !!(t.name || t.ref || t.surface || t.tracktype || t.sac_scale || t.width || /^(excellent|good|intermediate)$/.test(t.trail_visibility || '') || t.foot === 'designated' || t.foot === 'yes');
+}
+
 function wayFactor(tags, marked) {
   let f = FACTOR[tags.highway] ?? 2.5;
   if (marked) f *= 0.75;
@@ -19,6 +39,10 @@ function wayFactor(tags, marked) {
   else if (ALPINE.has(sac)) f *= 6;
   if (/^(bad|horrible|no)$/.test(tags.trail_visibility || '')) f *= 2;
   if (tags.via_ferrata_scale || tags.highway === 'via_ferrata') f *= 20;
+  if (tags.trail_visibility === 'intermediate') f *= 1.2;
+  if (tags.foot === 'discouraged' || tags.seasonal === 'yes' || tags.ford === 'yes') f *= 2.5;
+  // Sentier incertain : utilisé seulement s'il n'y a pas mieux.
+  if (!wayConfirmed(tags, marked)) f *= 1.8;
   return f;
 }
 
@@ -44,11 +68,12 @@ export function buildGraph(elements) {
   const lat = [], lon = [];
   const eFrom = [], eTo = [], eLen = [], eFac = [], eWay = [];
   const wayInfo = [];
-  ways.forEach((w, wi) => {
+  const kept = ways.filter((w) => !wayExcluded(w.tags, markedBy.has(w.id)));
+  kept.forEach((w, wi) => {
     const marked = markedBy.has(w.id);
     const fac = wayFactor(w.tags, marked);
     wayInfo.push({
-      id: w.id, highway: w.tags.highway, name: w.tags.name || '', marked,
+      id: w.id, highway: w.tags.highway, name: w.tags.name || '', marked, sure: wayConfirmed(w.tags, marked),
       road: ROADS.has(w.tags.highway), alpine: ALPINE.has(w.tags.sac_scale), demanding: w.tags.sac_scale === 'demanding_mountain_hiking',
       nodes: w.nodes, first: -1,
     });
@@ -201,10 +226,16 @@ export function pathTo(res, target) {
 const coords = (g, verts) => verts.map((v) => [g.lat[v], g.lon[v]]);
 
 function describe(g, edges) {
-  let total = 0, road = 0, marked = 0, alpine = 0, demanding = 0;
+  let total = 0, road = 0, marked = 0, alpine = 0, demanding = 0, unsure = 0, run = 0, maxUnsure = 0;
   const names = new Map();
+  const runs = [];
   for (const e of edges) {
     const w = g.ways[g.eWay[e]], len = g.eLen[e];
+    if (!w.sure) {
+      unsure += len; run += len; maxUnsure = Math.max(maxUnsure, run);
+      const last = runs[runs.length - 1];
+      if (last && total - last[1] < 30) last[1] = total + len; else runs.push([total, total + len]);
+    } else run = 0;
     total += len;
     if (w.road) road += len;
     if (w.marked) marked += len;
@@ -215,6 +246,8 @@ function describe(g, edges) {
   return {
     meters: total, road: total ? road / total : 0, marked: total ? marked / total : 0,
     alpine: alpine > 30, demanding: demanding > 100,
+    unsure: total ? unsure / total : 0, maxUnsure: Math.round(maxUnsure),
+    unsureRuns: runs.filter(([a, b]) => b - a >= 60).map(([a, b]) => [Math.round(a), Math.round(b)]),
   };
 }
 
@@ -399,6 +432,8 @@ export function proposeHikes(g, place, others = []) {
   for (const c of candidates.sort((a, b) => a.meters - b.meters)) {
     if (c.meters < 3000) continue; // en dessous de 3 km, c'est une promenade, pas une rando
     if (c.road > 0.5 && candidates.length > 2) continue;
+    // Pas de boucle qui compte sur un long bout de sentier incertain : risque de demi-tour en pleine forêt.
+    if (c.maxUnsure > LIMITS.maxUnsure || c.unsure > LIMITS.unsure) continue;
     if (uniq.some((u) => Math.abs(u.meters - c.meters) < 150 && u.start.v === c.start.v)) continue;
     uniq.push(c);
   }
@@ -494,7 +529,7 @@ function finish(g, cand, start, place, via) {
   const pts = coords(g, cand.verts);
   const startName = start.name || nearestName(g, start.lat, start.lon) || '';
   return {
-    kind: cand.kind, pts, meters: info.meters, road: info.road, marked: info.marked,
+    kind: cand.kind, pts, meters: info.meters, road: info.road, marked: info.marked, unsure: info.unsure, maxUnsure: info.maxUnsure, unsureRuns: info.unsureRuns,
     alpine: info.alpine, demanding: info.demanding, overlap: cand.overlap,
     start: { v: start.v, lat: start.lat, lon: start.lon, kind: start.kind, name: startName },
     via: via ? { name: via.name, lat: via.lat, lon: via.lon } : null,

@@ -208,6 +208,15 @@ export function showTrace(h, opts = {}) {
   // Fil lumineux qui court dans le sens de marche.
   const flow = L.polyline(h.pts, { ...R, color: '#ffffff', weight: 2.4, opacity: 0.9, interactive: false, className: 'trace-flow' }).addTo(traceLayer);
   arrows(h.pts);
+  // Bouts de sentier peu décrits sur la carte : pointillés orange par-dessus le tracé.
+  if (h.unsureRuns && h.unsureRuns.length) {
+    const cum = [0];
+    for (let i = 1; i < h.pts.length; i++) { const a = h.pts[i - 1], b = h.pts[i]; cum.push(cum[i - 1] + Math.hypot((b[0] - a[0]) * 111320, (b[1] - a[1]) * 111320 * Math.cos(a[0] * Math.PI / 180))); }
+    for (const [a, b] of h.unsureRuns) {
+      const seg = h.pts.filter((_, i) => cum[i] >= a && cum[i] <= b);
+      if (seg.length > 1) L.polyline(seg, { ...R, color: '#f08a24', weight: 5.5, opacity: 1, dashArray: '2 9', lineCap: 'round', interactive: false }).addTo(traceLayer);
+    }
+  }
   // Le tracé (et son liseré blanc) se dessine à l'apparition, une fois la carte posée sur le tracé.
   if (opts.animate !== false && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
     const paths = [halo, line].map((l) => l._path).filter((x) => x && x.getTotalLength);

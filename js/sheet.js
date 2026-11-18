@@ -291,6 +291,7 @@ export function warnsOf(h) {
   else if (h.demanding) w.push('Passage exigeant sur le tracé (pied sûr nécessaire).');
   if (h.road > 0.25) w.push(`Environ ${Math.round(h.road * 100)} % du parcours sur route ou rue.`);
   if (h.source === 'calcul' && h.marked < 0.4) w.push('Peu de sentiers balisés sur ce tracé : garde la trace sous les yeux.');
+  if (h.source === 'calcul' && h.maxUnsure > 100) w.push(`Environ ${Math.round(h.unsure * h.meters / 10) * 10} m de sentier peu décrit sur la carte, en pointillés orange sur le tracé : il peut être étroit ou peu marqué. Repère-le avant de partir.`);
   if (h.up === null) w.push('Altitudes indisponibles : le niveau est estimé sur la distance seule.');
   if (h.kind === 'itinéraire') w.push('Itinéraire en ligne : prévois le retour depuis l\'arrivée.');
   return w;
