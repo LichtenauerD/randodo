@@ -5,7 +5,7 @@ import { store, bus } from './state.js';
 import { glyph } from './map.js';
 import { esc, kv, settings, slugOf, toast } from './util.js';
 import { prefetchPlace } from './hikes.js';
-import { GRADES, DODO_STAGES, gradeOf, dodoSvg, climbSvg, placeClimbers } from './grades.js';
+import { GRADES, DODO_STAGES, gradeOf, dodoSvg, climbSvg, placeClimbers, animateClimber } from './grades.js';
 
 export const SECTORS = [
   { id: 'vosges', name: 'Vosges', massifs: ['Vosges', 'Vosges du Nord'] },
@@ -65,7 +65,7 @@ export function renderObjectifs(root) {
     </section>
     <div class="sectors" role="tablist">${sec.map((s) => `<button type="button" role="tab" class="sec${s.id === sector ? ' on' : ''}" data-s="${s.id}">${climbSvg(s.pct, 92, 54)}<b>${s.name}</b><span>${s.done} / ${s.total}</span></button>`).join('')}</div>
     <section class="geo-box"><div id="geo-map" class="geo-map"></div>
-      <div class="geo-legend"><span><i class="lg done"></i>fait</span><span><i class="lg todo"></i>à faire</span><span><i class="lg hatch"></i>secteur exploré</span><span><i class="lg mid"></i>800 m</span><span><i class="lg high"></i>1 500 m</span></div></section>
+      <div class="geo-legend"><span><i class="lg done"></i>fait</span><span><i class="lg todo"></i>à faire</span><span><i class="lg red"></i>territoire conquis</span><span><i class="lg forest"></i>forêt</span><span><i class="lg meadow"></i>prés</span><span><i class="lg field"></i>cultures</span><span><i class="lg town"></i>villes</span></div></section>
     <button type="button" class="btn wide offline-sec" id="obj-dl">${dlLabel()}</button>
     <section class="geo-list"><div class="seg" role="tablist">
       <button type="button" data-f="todo" class="${filter === 'todo' ? 'on' : ''}">À faire</button><button type="button" data-f="done" class="${filter === 'done' ? 'on' : ''}">Faits</button><button type="button" data-f="all" class="${filter === 'all' ? 'on' : ''}">Tous</button></div>
@@ -114,19 +114,26 @@ async function drawMap(root) {
   const ll = (r) => r.map(([x, y]) => [y, x]);
   if (data) {
     const poly = (rings, o) => L.polygon(rings.map(ll), { renderer: svg, interactive: false, ...o }).addTo(gmap);
-    for (const p of data.relief.mid) poly(p, { stroke: false, fillColor: '#c96a2b', fillOpacity: 0.45 });
-    for (const p of data.relief.high) poly(p, { stroke: false, fillColor: '#6b3f22', fillOpacity: 0.6 });
-    for (const v of data.valleys) for (const l of v.lines) L.polyline(ll(l), { renderer: svg, color: '#f5b700', weight: 14, opacity: 0.3, lineCap: 'round', interactive: false }).addTo(gmap);
-    for (const r of data.rivers) for (const l of r.lines) L.polyline(ll(l), { renderer: svg, color: '#5d9cc9', weight: r.major ? 4.5 : 2, opacity: 0.9, interactive: false }).addTo(gmap);
-    for (const lk of data.lakes) L.polygon(ll(lk), { renderer: svg, stroke: true, color: '#5d9cc9', weight: 1, fillColor: '#8fc1e3', fillOpacity: 1, interactive: false }).addTo(gmap);
-    // Intercommunalités où au moins un lieu est fait : hachurées.
+    if (data.image) {
+      // Fond peint (occupation du sol et ombrage du relief), calculé une fois par semaine.
+      L.imageOverlay(data.image, [[b[1], b[0]], [b[3], b[2]]], { interactive: false, className: 'geo-paint' }).addTo(gmap);
+    } else {
+      for (const p of data.relief.mid) poly(p, { stroke: false, fillColor: '#c96a2b', fillOpacity: 0.45 });
+      for (const p of data.relief.high) poly(p, { stroke: false, fillColor: '#6b3f22', fillOpacity: 0.6 });
+    }
+    // Intercommunalités où au moins un lieu est fait : rouge pastel plein.
     const doneUnits = new Set(places.filter((p) => store.isDone(p)).map((p) => data.placeUnit[slugOf(p.name)]).filter(Boolean));
-    for (const id of doneUnits) { const u = data.units[id]; if (u) L.polygon(u.rings.map(ll), { renderer: svg, color: '#8a1fd1', weight: 1.2, opacity: 0.7, fillColor: 'url(#hatch)', fillOpacity: 1, interactive: false, className: 'unit-done' }).addTo(gmap); }
+    for (const id of doneUnits) { const u = data.units[id]; if (u) L.polygon(u.rings.map(ll), { renderer: svg, color: '#d9605a', weight: 1.4, opacity: 0.9, fillColor: '#f2a29b', fillOpacity: 0.72, interactive: false, className: 'unit-done' }).addTo(gmap); }
+    for (const v of data.valleys) for (const l of v.lines) L.polyline(ll(l), { renderer: svg, color: '#f5b700', weight: 12, opacity: data.image ? 0.22 : 0.3, lineCap: 'round', interactive: false }).addTo(gmap);
+    for (const r of data.rivers) for (const l of r.lines) L.polyline(ll(l), { renderer: svg, color: '#3f8fc7', weight: r.major ? 4.5 : 2.2, opacity: 0.95, interactive: false }).addTo(gmap);
+    for (const lk of data.lakes) L.polygon(ll(lk), { renderer: svg, stroke: true, color: '#3f8fc7', weight: 1, fillColor: '#7dbbe3', fillOpacity: 1, interactive: false }).addTo(gmap);
+    // Contour de la zone du secteur : liseré blanc puis trait foncé, comme une frontière de carte de jeu.
+    if (data.outline) for (const p of data.outline) {
+      poly(p, { fill: false, color: '#fff', weight: 6, opacity: 0.9 });
+      poly(p, { fill: false, color: '#24463a', weight: 2.4, opacity: 1, dashArray: '9 5' });
+    }
     for (const v of data.valleys) { const l = v.lines[Math.floor(v.lines.length / 2)]; const m = l[Math.floor(l.length / 2)]; L.marker([m[1], m[0]], { icon: L.divIcon({ className: 'valley-lab', html: esc(v.name), iconSize: null }), interactive: false }).addTo(gmap); }
   }
-  // Motif de hachures, déclaré une fois dans le calque SVG.
-  const host = svg._container;
-  if (host && !host.querySelector('#hatch')) host.insertAdjacentHTML('afterbegin', '<defs><pattern id="hatch" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="7" height="7" fill="rgba(138,31,209,.08)"/><line x1="0" y1="0" x2="0" y2="7" stroke="#8a1fd1" stroke-width="2" stroke-opacity=".45"/></pattern></defs>');
   for (const [name, la, lo] of TOWNS) {
     if (!bounds.contains([la, lo])) continue;
     L.circleMarker([la, lo], { renderer: svg, radius: 3, color: '#fff', weight: 1, fillColor: '#7b8580', fillOpacity: 1, interactive: false }).addTo(gmap);
@@ -157,7 +164,8 @@ async function downloadSector(btn) {
   const list = placesOf(sector);
   btn.disabled = true;
   let ok = 0, k = 0;
-  await loadGeo(sector);
+  const g = await loadGeo(sector);
+  if (g && g.image) await fetch(g.image).catch(() => {});
   for (const p of list) {
     k++;
     btn.textContent = `Téléchargement… ${k} / ${list.length}`;
@@ -174,10 +182,12 @@ function openHelp() {
   m.innerHTML = `<div class="box" role="dialog" aria-modal="true"><h2>Les grades</h2>
     <p class="note">Chaque lieu fait compte, qu'il soit coché ici ou noté dans ton historique. Le dodo grandit avec toi.</p>
     <ol class="grades">${GRADES.map((g, i) => `<li>${dodoSvg(g.dodo, 40)}<span><b>${esc(g.name)}</b><small>${g.at === 0 ? 'Au départ' : `À partir de ${g.at} lieu${g.at > 1 ? 'x' : ''}`} · ${DODO_STAGES[i]}</small></span></li>`).join('')}</ol>
-    <p class="note">Par secteur, le dodo gravit sa montagne à mesure que tu fais les lieux ; il plante son drapeau quand tout est fait. Sur la carte, chaque intercommunalité où tu as fait un lieu passe en hachuré.</p>
+    <div class="help-climb">${climbSvg(0, 220, 154)}</div>
+    <p class="note">Par secteur, le dodo gravit sa montagne à mesure que tu fais les lieux ; il plante son drapeau quand tout est fait. Sur la carte, chaque intercommunalité où tu as fait un lieu passe en rouge : ton territoire.</p>
     <div class="foot"><button type="button" class="btn main" id="gh-ok">Compris</button></div></div>`;
   m.hidden = false;
-  const close = () => { m.hidden = true; m.innerHTML = ''; };
+  const stop = animateClimber(m.querySelector('.help-climb svg'));
+  const close = () => { stop(); m.hidden = true; m.innerHTML = ''; };
   m.onclick = (e) => { if (e.target === m) close(); };
   m.querySelector('#gh-ok').onclick = close;
 }

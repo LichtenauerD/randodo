@@ -54,7 +54,7 @@ export function openOnboarding(onDone = () => {}) {
         const k = slugOf(p.name), on = picked.has(k);
         if (on !== store.isVisited(p) && !(store.isDone(p) && !store.isVisited(p))) await store.setVisited(p, on);
       }
-      if (picked.size) toast(`${picked.size} lieu${picked.size > 1 ? 'x' : ''} noté${picked.size > 1 ? 's' : ''}. Ton grade est dans l'onglet Objectifs.`, 4500);
+      if (picked.size) toast(`${picked.size} lieu${picked.size > 1 ? 'x' : ''} noté${picked.size > 1 ? 's' : ''}. Ton grade est dans l'onglet Conquête.`, 4500);
     }
     settings.set('onboarded', true);
     host.classList.add('out');

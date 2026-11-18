@@ -38,15 +38,15 @@ const bodyBase = (x = 0, y = 0, s = 1) => `<g transform="translate(${x} ${y}) sc
 export function dodoSvg(stage, size = 56) {
   let art = '';
   switch (stage) {
-    case 0: art = `<ellipse cx="32" cy="38" rx="15" ry="19" fill="${C.egg}" stroke="${C.eggLine}" stroke-width="2"/><circle cx="27" cy="31" r="2" fill="${C.eggLine}"/><circle cx="36" cy="42" r="2.5" fill="${C.eggLine}"/>`; break;
-    case 1: art = `<ellipse cx="32" cy="38" rx="15" ry="19" fill="${C.egg}" stroke="${C.eggLine}" stroke-width="2"/><path d="M19 33l5 3 4-4 4 5 5-4 4 3 3-2" fill="none" stroke="${C.dark}" stroke-width="1.6" stroke-linejoin="round"/>`; break;
+    case 0: art = `<ellipse cx="32" cy="33" rx="15" ry="19" fill="${C.egg}" stroke="${C.eggLine}" stroke-width="2"/><circle cx="27" cy="26" r="2" fill="${C.eggLine}"/><circle cx="36" cy="37" r="2.5" fill="${C.eggLine}"/>`; break;
+    case 1: art = `<ellipse cx="32" cy="33" rx="15" ry="19" fill="${C.egg}" stroke="${C.eggLine}" stroke-width="2"/><path d="M19 28l5 3 4-4 4 5 5-4 4 3 3-2" fill="none" stroke="${C.dark}" stroke-width="1.6" stroke-linejoin="round"/>`; break;
     case 2: art = `<circle cx="32" cy="26" r="9" fill="${C.body}"/><path d="M38 23c6 0 9 2 9 5 0 2-2 3-4 2l-5-1z" fill="${C.beak}"/><circle cx="34" cy="23" r="1.8" fill="${C.dark}"/>
       <path d="M17 36l5 3 4-4 4 5 5-4 4 3 4-3v8c0 10-7 15-15 15S17 54 17 44z" fill="${C.egg}" stroke="${C.eggLine}" stroke-width="2" stroke-linejoin="round"/>`; break;
     case 3: art = bodyBase(-2, 2, 0.95); break;
     case 4: art = `<rect x="11" y="31" width="11" height="15" rx="3" fill="#2f6b4f"/><path d="M14 31c0-4 6-4 6 0" fill="none" stroke="#2f6b4f" stroke-width="2"/>${bodyBase(0, 2, 0.95)}`; break;
     case 5: art = `<rect x="11" y="31" width="11" height="15" rx="3" fill="#2f6b4f"/>${bodyBase(0, 2, 0.95)}<path d="M50 30l-4 30" stroke="${C.dark}" stroke-width="2" stroke-linecap="round"/><path d="M13 34l-4 26" stroke="${C.dark}" stroke-width="2" stroke-linecap="round"/>`; break;
-    case 6: art = `<path d="M0 64l20-22 10 8 14-18 20 32z" fill="#c8763a" opacity=".7"/><path d="M44 32l6 8-4-1-4 4-3-4z" fill="#fff"/>${bodyBase(4, -14, 0.72)}`; break;
-    case 7: art = `<path d="M0 64l20-22 10 8 14-18 20 32z" fill="#c8763a" opacity=".7"/>${bodyBase(4, -14, 0.72)}<path d="M52 10v26" stroke="${C.dark}" stroke-width="2"/><path d="M52 10l11 4-11 4z" fill="${C.flag}"/>`; break;
+    case 6: art = `<path d="M0 64l20-22 10 8 14-18 20 32z" fill="#c8763a" opacity=".7"/><path d="M44 32l6 8-4-1-4 4-3-4z" fill="#fff"/>${bodyBase(24, -6, 0.66)}`; break;
+    case 7: art = `<path d="M0 64l20-22 10 8 14-18 20 32z" fill="#c8763a" opacity=".7"/><path d="M20 20v22" stroke="${C.dark}" stroke-width="2"/><path d="M20 20l11 4-11 4z" fill="${C.flag}"/>${bodyBase(24, -6, 0.66)}`; break;
     case 8: art = `<path d="M4 34c8-12 18-14 24-6M60 34c-8-12-18-14-24-6" fill="${C.body}" stroke="${C.dark}" stroke-width="1.2"/>${bodyBase(2, 0, 0.9)}<path d="M2 58c10-3 20-3 30 0s20 3 30 0" fill="none" stroke="#9cc3e6" stroke-width="2" stroke-dasharray="3 4"/>`; break;
     default: art = `<path d="M2 24c10-16 22-16 28-6M62 24c-10-16-22-16-28-6" fill="${C.body}" stroke="${C.dark}" stroke-width="1.2"/>${bodyBase(2, -6, 0.85)}<path d="M4 50h10M2 56h14M6 62h8" stroke="${C.violet}" stroke-width="2.4" stroke-linecap="round"/>`;
   }
@@ -79,4 +79,27 @@ export function placeClimbers(root) {
     const pt = route.getPointAtLength(route.getTotalLength() * +d.dataset.p);
     d.setAttribute('transform', `translate(${pt.x.toFixed(1)} ${pt.y.toFixed(1)})`);
   });
+}
+
+// Dodo qui gravit sa montagne en boucle (aide des grades). Sans animation si l'utilisateur la refuse.
+export function animateClimber(svg, ms = 4200) {
+  const route = svg.querySelector('.climb-route'), d = svg.querySelector('.climb-dodo'), line = svg.querySelectorAll('path[pathLength]')[0];
+  if (!route || !d) return () => {};
+  const total = route.getTotalLength();
+  const still = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let raf = 0, t0 = 0;
+  const step = (t) => {
+    if (!svg.isConnected) return;
+    if (!t0) t0 = t;
+    const k = ((t - t0) % (ms + 900)) / ms, p = Math.min(1, k);
+    const e = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
+    const pt = route.getPointAtLength(total * e);
+    const hop = Math.abs(Math.sin(e * Math.PI * 14)) * 1.6 * (p < 1 ? 1 : 0);
+    d.setAttribute('transform', `translate(${pt.x.toFixed(1)} ${(pt.y - hop).toFixed(1)})`);
+    if (line) line.setAttribute('stroke-dasharray', `${e.toFixed(3)} 1`);
+    raf = requestAnimationFrame(step);
+  };
+  if (still) { const pt = route.getPointAtLength(total * 0.6); d.setAttribute('transform', `translate(${pt.x} ${pt.y})`); if (line) line.setAttribute('stroke-dasharray', '0.6 1'); }
+  else raf = requestAnimationFrame(step);
+  return () => cancelAnimationFrame(raf);
 }

@@ -5,6 +5,7 @@ import { store, want, saveWant } from './state.js';
 import { openPlace } from './sheet.js';
 import { glyph } from './map.js';
 import { kv, settings, dist, esc, fetchJson, toast, fmtKm, slugOf } from './util.js';
+import { AUDIENCES, idealPlace, idealLabel } from './ideal.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const LVC = { facile: 'var(--facile)', moyenne: 'var(--moyenne)', difficile: 'var(--difficile)' };
@@ -123,7 +124,9 @@ const SEASON = ['Janvier : neige probable sur les crêtes. Vise bas, ou sors les
 const PIN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>';
 const TOWN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V10l5-4 5 4v11M15 21v-7h4v7"/></svg>';
 const LVSUB = { facile: "jusqu'à 8 km", moyenne: '8 à 15 km', difficile: 'plus long, plus raide' };
-const getQ = () => ({ minutes: 60, groups: [], levels: [], ...settings.get('search', {}) });
+const getQ = () => ({ minutes: 60, groups: [], levels: [], ideal: [], ...settings.get('search', {}) });
+// Le lieu convient-il à au moins une des envies « Idéal… » cochées ?
+const fitsIdeal = (q, s, idx) => !q.ideal || !q.ideal.length || [...idealPlace(s, idx[slugOf(s.name)])].some((a) => q.ideal.includes(a));
 
 // Panneau de recherche : tous les choix visibles, un appui suffit.
 function finderHtml() {
@@ -139,6 +142,8 @@ function finderHtml() {
       <div class="fgrid">${GROUPS.map((g) => `<button type="button" data-v="${g.id}" class="${q.groups.includes(g.id) ? 'on' : ''}" style="--c:${(TYPES[g.types[0]] || TYPES.lieu).color}"><span class="ic">${glyph(g.icon)}</span>${g.short}</button>`).join('')}</div></div>
     <div class="fq"><span class="fl">Niveau <small>${q.levels.length ? '' : 'tous les niveaux'}</small></span>
       <div class="flv">${CONFIG.levels.map((l) => `<button type="button" data-v="${l.id}" class="${q.levels.includes(l.id) ? 'on' : ''}" style="--c:${LVC[l.id]}"><b>${l.label}</b><span>${LVSUB[l.id]}</span></button>`).join('')}</div></div>
+    <div class="fq"><span class="fl">Idéal… <small>${q.ideal.length ? '' : 'pour tout le monde'}</small></span>
+      <div class="fideal">${AUDIENCES.map((a) => `<button type="button" data-v="${a.id}" class="${q.ideal.includes(a.id) ? 'on' : ''}"><b>${a.label}</b><span>${a.sub}</span></button>`).join('')}</div></div>
     <button type="button" class="btn main big find" id="hm-search"><span id="f-count">Voir les randos</span></button>`;
 }
 function bindFinder() {
@@ -173,6 +178,7 @@ function bindFinder() {
   });
   multi('.fgrid', 'groups', 'rien de choisi : tout est proposé');
   multi('.flv', 'levels', 'tous les niveaux');
+  multi('.fideal', 'ideal', 'pour tout le monde');
   $('#hm-search', box).onclick = async () => {
     let o = getOrigin();
     if (!o) { try { o = await locateMe(); bindFinder(); } catch (err) { toast(err.message, 4500); openOrigin(); return; } }
@@ -197,6 +203,7 @@ async function countPreview() {
     if (dist([o.lat, o.lon], [s.lat, s.lon]) / 1000 > kmMax) continue;
     const e = idx[slugOf(s.name)];
     if (q.levels.length && e && !e.some((h) => q.levels.includes(h.level))) continue;
+    if (!fitsIdeal(q, s, idx)) continue;
     n++;
   }
   const txt = n ? `Voir ${n > 1 ? 'les ' + n + ' lieux' : 'le lieu'}` : 'Chercher plus largement';
@@ -324,8 +331,10 @@ export async function runSearch(q, origin) {
   const types = q.groups.length ? GROUPS.filter((g) => q.groups.includes(g.id)).flatMap((g) => g.types) : [];
   const kmMax = (q.minutes / 1.35) * 1.2; // marge : l'autoroute fait mieux que l'estimation
   const near = (p) => { const km = dist([origin.lat, origin.lon], [p.lat, p.lon]) / 1000; return km <= kmMax ? km : null; };
+  const idx0 = await hikeIndex();
+  if (my !== runId) return;
   let cands = [];
-  for (const s of SITES) { if (types.length && !types.includes(s.type)) continue; const km = near(s); if (km !== null) cands.push(Object.assign(s, { _min: estMinutes(km), _approx: true })); }
+  for (const s of SITES) { if (types.length && !types.includes(s.type)) continue; if (!fitsIdeal(q, s, idx0)) continue; const km = near(s); if (km !== null) cands.push(Object.assign(s, { _min: estMinutes(km), _approx: true })); }
   // Seuls les lieux de la sélection sont proposés : ce sont de vraies destinations de rando (pas un château en ville).
   const note = '';
   // Lieux déjà faits : écartés, sauf s'il n'y a plus rien à proposer.
@@ -344,7 +353,7 @@ export async function runSearch(q, origin) {
   const levels = {};
   for (const p of results) {
     const e = p.curated && idx[slugOf(p.name)];
-    if (e) levels[p.id] = e.map((h) => ({ level: h.level, meters: h.km * 1000 }));
+    if (e) levels[p.id] = e.map((h) => ({ level: h.level, meters: h.km * 1000, up: h.up }));
   }
   // Le niveau demandé passe devant : d'abord les lieux qui ont une boucle de ce niveau.
   if (q.levels.length) {
@@ -371,8 +380,9 @@ function levelBadges(p) {
   for (const h of list) if (!best[h.level] || h.meters < best[h.level]) best[h.level] = h.meters;
   const html = CONFIG.levels.filter((l) => best[l.id]).map((l) => `<span class="lvb${q.levels.length && !q.levels.includes(l.id) ? ' dim' : ''}"><i class="lvdot" style="background:${LVC[l.id]}"></i>${l.label} ${fmtKm(best[l.id])}</span>`).join('');
   if (!html) return '<span class="note">Pas de boucle trouvée ici</span>';
+  const id = idealLabel([...idealPlace(p, list.map((h) => ({ km: h.meters / 1000, up: h.up })))]);
   const miss = q.levels.length && !q.levels.some((l) => best[l]);
-  return html + (miss ? `<span class="note" style="display:block">Pas de proposition ${q.levels.map((l) => LVL[l].toLowerCase()).join(' ou ')} ici</span>` : '');
+  return html + (id ? `<span class="ideal-tag">${esc(id)}</span>` : '') + (miss ? `<span class="note" style="display:block">Pas de proposition ${q.levels.map((l) => LVL[l].toLowerCase()).join(' ou ')} ici</span>` : '');
 }
 
 function paintResults() {
@@ -380,7 +390,7 @@ function paintResults() {
   if (!box || !lastSearch) return;
   const { q, origin, results, note, approx, busy } = lastSearch;
   const where = `à ${DURATIONS.find((d) => d[0] === q.minutes)[1]} au plus de ${esc(origin.name === 'Ma position' ? 'ta position' : origin.name)}`;
-  const crit = [q.groups.length ? GROUPS.filter((g) => q.groups.includes(g.id)).map((g) => g.label.toLowerCase()).join(', ') : '', q.levels.length ? 'niveau ' + q.levels.map((l) => LVL[l].toLowerCase()).join(' ou ') : ''].filter(Boolean).join(', ');
+  const crit = [q.groups.length ? GROUPS.filter((g) => q.groups.includes(g.id)).map((g) => g.label.toLowerCase()).join(', ') : '', q.levels.length ? 'niveau ' + q.levels.map((l) => LVL[l].toLowerCase()).join(' ou ') : '', q.ideal && q.ideal.length ? idealLabel(q.ideal).toLowerCase() : ''].filter(Boolean).join(', ');
   const title = busy ? 'Je cherche ' + where : results.length ? `${results.length} lieu${results.length > 1 ? 'x' : ''} ${where}` : 'Rien ' + where;
   const head = `<section class="found"><h3>${title}</h3><p class="note">${crit ? esc(crit[0].toUpperCase() + crit.slice(1)) + '. ' : ''}<button type="button" class="more" id="hm-edit" style="margin:0;font-size:inherit">Changer</button> <button type="button" class="more" id="hm-clear" style="margin:0 0 0 8px;font-size:inherit">Effacer</button></p>`;
   if (busy) { box.innerHTML = head + '<div class="loading"><span class="spin"></span>Lieux et temps de route</div></section>'; bindHead(); return; }

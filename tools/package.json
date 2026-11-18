@@ -3,7 +3,8 @@
   "type": "module",
   "description": "Outils du calcul hebdomadaire de Randodo",
   "dependencies": {
+    "d3-contour": "^4.0.2",
     "geotiff": "^2.1.3",
-    "d3-contour": "^4.0.2"
+    "sharp": "^0.33.5"
   }
 }

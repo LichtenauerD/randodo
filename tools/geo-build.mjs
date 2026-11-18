@@ -3,6 +3,8 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { contours } from 'd3-contour';
 import { elevationAt } from './dem.mjs';
+import { readFile } from 'node:fs/promises';
+import { paintSector } from './landcover.mjs';
 
 globalThis.location = new URL('http://localhost/');
 const { SITES } = await import('../data/sites.js');
@@ -100,6 +102,13 @@ for (const sector of ['vosges', 'foret-noire', 'jura', 'suisse']) {
   const lats = places.map((p) => p.lat), lons = places.map((p) => p.lon);
   const b = [Math.min(...lons) - 0.25, Math.min(...lats) - 0.2, Math.max(...lons) + 0.25, Math.max(...lats) + 0.2].map((x) => +x.toFixed(2));
   console.log(`== ${sector} : ${places.length} lieux, cadre ${b.join(', ')}`);
+  // PARTS=fond : refait seulement le fond peint et le contour de zone, en gardant le reste du fichier.
+  if (process.env.PARTS === 'fond') {
+    const data = JSON.parse(await readFile(`data/geo/${sector}.json`, 'utf8'));
+    Object.assign(data, await paintSector(sector, data.bbox, places, ring));
+    await writeFile(`data/geo/${sector}.json`, JSON.stringify(data));
+    continue;
+  }
   const bb = `${b[1]},${b[0]},${b[3]},${b[2]}`;
 
   // 1. Relief
@@ -153,7 +162,9 @@ for (const sector of ['vosges', 'foret-noire', 'jura', 'suisse']) {
   for (const p of places) { const u = units[placeUnit[slugOf(p.name)]]; if (!u || !u.rings.some((r) => inRing([p.lon, p.lat], r))) { bad++; placeUnit[slugOf(p.name)] = u ? placeUnit[slugOf(p.name)] : null; } }
   console.log(`  intercommunalités : ${Object.keys(units).length} ; lieux hors polygone : ${bad}`);
 
-  const data = { sector, bbox: b, relief: { mid, high }, lakes, rivers: riverOut, valleys, units, placeUnit };
+  let painted = {};
+  try { painted = await paintSector(sector, b, places, ring); } catch (e) { console.log('  fond peint impossible : ' + e.message); }
+  const data = { sector, bbox: b, relief: { mid, high }, lakes, rivers: riverOut, valleys, units, placeUnit, ...painted };
   const json = JSON.stringify(data);
   await writeFile(`data/geo/${sector}.json`, json);
   console.log(`  écrit : ${(json.length / 1024).toFixed(0)} Ko`);

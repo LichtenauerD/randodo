@@ -91,3 +91,13 @@ Lieux, sentiers et balisage : © contributeurs OpenStreetMap (ODbL). Photos : Wi
 ## Photos des lieux (version 1.3.0)
 
 Les photos locales vont dans le dossier `photos/`, avec une ligne par lieu dans `data/photos.js`. Elles remplacent les photos trouvées automatiquement, et leur crédit s'affiche sur la fiche du lieu. Le détail des règles est dans `photos/LISEZMOI.txt`.
+
+
+## Version 1.6
+
+- **Conquête** (nouvel onglet) : grade de randonneur (10 paliers, de 0 à 200 lieux) avec un dodo qui évolue, progression par secteur (Vosges, Forêt-Noire, Jura, Suisse), carte peinte façon carte de jeu (forêts, prés, cultures, villes, ombrage du relief, lacs, rivières, vallées, contour de la zone) où chaque intercommunalité explorée passe en rouge pastel, lieux à cocher, téléchargement d'un secteur pour le hors ligne. Bouton « ? » : la liste des grades.
+- **Premier lancement** : page de photos pour cocher les lieux déjà faits.
+- **Météo** sur chaque rando, de J à J+7 : trois modèles (ECMWF, DWD, Météo-France) via Open-Meteo, au départ et au point haut.
+- **230 lieux** dans la sélection (liste du patch note ajoutée), randos précalculées chaque semaine, 189 photos Wikimedia vérifiées et créditées.
+- **Script du groupe** : il faut recoller `apps-script/Code.gs` dans la feuille (Extensions > Apps Script), puis **Déployer > Gérer les déploiements > modifier (crayon) > Version : Nouvelle version > Déployer**. L'adresse ne change pas. La feuille « Membres » gagne trois colonnes (grade, lieux, faits).
+- Données régénérées sur GitHub : `.github/workflows/geo.yml` (cartes des secteurs), `photos.yml` (photos candidates, branche à part), `randos.yml` (chaque lundi).

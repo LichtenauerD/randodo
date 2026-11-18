@@ -1,4 +1,5 @@
 // Fiche d'un lieu et fiche d'une randonnée (feuille basse).
+import { idealHike, idealLabel } from './ideal.js';
 import { weatherHtml, bindWeather } from './weather.js';
 import { CONFIG, TYPES } from './config.js';
 import { hikesFor, loadCircuit, ensureCorridor } from './hikes.js';
@@ -257,6 +258,7 @@ export function openHike(h, ctx = {}) {
         <div><b>${h.down == null ? '—' : h.down + ' m'}</b><span>descente</span></div>
         <div><b>${fmtDur(h.minutes)}</b><span>de marche</span></div>
       </div>
+      ${(() => { const pl = ctx.place || current.place; const t = pl ? idealLabel(idealHike({ km: h.meters / 1000, up: h.up || 0 }, pl.type)) : ''; return t ? `<p class="ideal-line"><span class="ideal-tag">${esc(t)}</span></p>` : ''; })()}
       ${profileSvg(h.prof)}
       ${weatherHtml()}
       ${startTxt}

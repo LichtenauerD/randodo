@@ -6,6 +6,10 @@ on:
         description: 'Secteurs (vosges, foret-noire, jura, suisse ; vide : tous)'
         required: false
         default: ''
+      parts:
+        description: 'fond : refaire seulement le fond peint'
+        required: false
+        default: ''
 permissions:
   contents: write
 concurrency:
@@ -28,6 +32,7 @@ jobs:
       - name: Construction
         env:
           ONLY: ${{ github.event.inputs.only }}
+          PARTS: ${{ github.event.inputs.parts }}
         run: node tools/geo-build.mjs
       - name: Enregistrement
         if: always()
