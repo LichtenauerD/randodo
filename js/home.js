@@ -8,6 +8,7 @@ import { glyph } from './map.js';
 import { kv, settings, dist, esc, fetchJson, toast, fmtKm, slugOf } from './util.js';
 import { AUDIENCES, idealPlace, idealLabel } from './ideal.js';
 import { walkerSvg } from './grades.js';
+import { checkGradeUp } from './objectifs.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const LVC = { facile: 'var(--facile)', moyenne: 'var(--moyenne)', difficile: 'var(--difficile)' };
@@ -105,7 +106,7 @@ function drawPicks(origin) {
 
 // Le dodo de l'accueil : il suit le fil violet jusqu'à la balise (une fois par session), puis attend.
 // Un toucher le fait sauter et parler.
-const WALK_SAYS = ['On y va ?', 'Le dodo ne vole pas. Il marche.', 'Une cascade, ça te dit ?', 'Prends de l\'eau !', 'Encore un sommet ?', 'Je connais un coin calme…'];
+const WALK_SAYS = ['Moi c\'est Didou. On y va ?', 'Le dodo ne vole pas. Il marche.', 'Une cascade, ça te dit ?', 'Prends de l\'eau !', 'Encore un sommet ?', 'Je connais un coin calme…'];
 function startWalker(hello) {
   if (!hello) return;
   const path = hello.querySelector('.walk path');
@@ -113,7 +114,7 @@ function startWalker(hello) {
   const box = document.createElement('button');
   box.type = 'button';
   box.className = 'walker';
-  box.setAttribute('aria-label', 'Le dodo de Randodo');
+  box.setAttribute('aria-label', 'Didou, le dodo de Randodo');
   box.innerHTML = walkerSvg(56) + '<span class="walker-say" hidden></span>';
   hello.appendChild(box);
   const total = path.getTotalLength();
@@ -318,7 +319,7 @@ function openOrigin() {
 }
 
 // Idée de la semaine déjà faite : photo grisée, coche verte et un mot du dodo.
-const DONE_SAYS = ['Déjà conquis, tu connais le coin.', 'Celle-là, tu l\'as déjà dans les jambes.', 'Déjà faite : à refaire en d\'autres saisons ?', 'Cochée ! Le dodo est fier de toi.'];
+const DONE_SAYS = ['Déjà conquis, tu connais le coin.', 'Celle-là, tu l\'as déjà dans les jambes.', 'Déjà faite : à refaire en d\'autres saisons ?', 'Cochée ! Didou est fier de toi.'];
 const doneSay = (p) => DONE_SAYS[[...p.name].reduce((a, c) => a + c.charCodeAt(0), 0) % DONE_SAYS.length];
 const tick = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
 
@@ -354,6 +355,7 @@ function mineHtml() {
 }
 
 export async function renderHome(el) {
+  checkGradeUp();
   host = el;
   const origin = getOrigin();
   const { picks } = weeklyPicks(origin);

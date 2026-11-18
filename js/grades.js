@@ -1,4 +1,6 @@
 // Grades de randonneur et dodo qui évolue avec eux.
+// Le dodo de Randodo s'appelle Didou : son nom n'apparaît qu'aux moments qui comptent.
+export const MASCOT = 'Didou';
 export const GRADES = [
   { at: 0, name: 'Promeneur du dimanche', dodo: 0 },
   { at: 3, name: 'Baladeur', dodo: 1 },

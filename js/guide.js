@@ -4,13 +4,14 @@ import { map, showTrace, clearTrace, showMe, hideMe, setMarkersVisible } from '.
 import { closeSheet } from './sheet.js';
 import { openLogForm } from './pages.js';
 import { upAfter } from './elev.js';
-import { cumulative, dist, projector, fmtKm, fmtM, fmtDur, esc, toast } from './util.js';
+import { cumulative, dist, projector, fmtKm, fmtM, fmtDur, esc, toast, settings } from './util.js';
 import { slopeRuns, slopeProfileSvg, upcoming, SLOPE } from './slope.js';
 import { symHtml, symName, turnText } from './sheet.js';
 
 // Flèche de direction : angle par consigne.
 const ARROW = { G: -90, D: 90, LG: -45, LD: 45, TD: 0, DG: -150, DD: 150 };
 const arrowSvg = (code) => `<svg viewBox="0 0 40 40" class="turn-arrow" style="transform:rotate(${ARROW[code] || 0}deg)" aria-hidden="true"><path d="M20 4l11 13h-7v19h-8V17H9z" fill="currentColor"/></svg>`;
+const PROF_IC = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 19l6-9 4 5 3-4 7 8z"/></svg>';
 const clock = (ms) => { const s = Math.floor(ms / 1000), h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), x = s % 60; return (h ? h + ':' + String(m).padStart(2, '0') : String(m)) + ':' + String(x).padStart(2, '0'); };
 
 let g = null;
@@ -216,7 +217,8 @@ export function startGuide(h, opts = {}) {
       <div id="hud-turn" class="hud-turn" hidden></div>
     </div>
     <div id="hud-alert" class="hud-alert info" hidden></div>
-    <div class="hud-panel">
+    <div class="hud-panel${settings.get('hudProfile', false) ? ' open' : ''}">
+      <button type="button" class="hud-ptog" id="hud-ptog" aria-label="Afficher ou masquer le profil">${PROF_IC}</button>
       <div id="hud-mark" class="hud-mark"></div>
       <div id="hud-prof"></div>
       <p id="hud-now" class="hud-run"></p>
@@ -232,6 +234,13 @@ export function startGuide(h, opts = {}) {
     alertBox(g.paused ? 'Guidage en pause.' : '', 'info');
   };
   document.getElementById('hud-stop').onclick = () => finish();
+  document.getElementById('hud-ptog').onclick = () => {
+    const panel = document.querySelector('.hud-panel');
+    const open = !panel.classList.contains('open');
+    panel.classList.toggle('open', open);
+    settings.set('hudProfile', open);
+    g.profBucket = -1; live();
+  };
   g.clock = setInterval(tickClock, 1000);
   live();
   map.on('dragstart', unfollow);

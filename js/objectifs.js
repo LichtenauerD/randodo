@@ -5,7 +5,7 @@ import { store, bus } from './state.js';
 import { glyph } from './map.js';
 import { esc, kv, settings, slugOf, toast } from './util.js';
 import { prefetchPlace } from './hikes.js';
-import { GRADES, DODO_STAGES, gradeOf, dodoSvg, climbSvg, placeClimbers, animateClimber } from './grades.js';
+import { GRADES, DODO_STAGES, gradeOf, dodoSvg, climbSvg, placeClimbers, animateClimber, MASCOT } from './grades.js';
 
 export const SECTORS = [
   { id: 'vosges', name: 'Vosges', massifs: ['Vosges', 'Vosges du Nord'] },
@@ -60,7 +60,28 @@ function rerender(root) {
   back(); requestAnimationFrame(back); setTimeout(back, 120);
 }
 
+// Passage de grade : Didou évolue, on le fête une fois. Au tout premier passage, on retient le grade sans fête.
+export function checkGradeUp() {
+  const g = gradeOf(doneCount(SITES));
+  const last = settings.get('lastGrade', null);
+  settings.set('lastGrade', g.i);
+  if (last == null || g.i <= last || document.getElementById('tour')) return;
+  const box = document.createElement('div');
+  box.className = 'gradeup';
+  box.innerHTML = `<div class="gu-card" role="dialog" aria-live="polite">
+    <div class="gu-art">${dodoSvg(g.dodo, 110)}</div>
+    <h2>${MASCOT} a évolué !</h2>
+    <p>Tu es maintenant <b>${esc(g.name)}</b>. ${esc(DODO_STAGES[g.dodo])}, et ${MASCOT} n'en revient pas.</p>
+    <button type="button" class="btn main">Bravo ${MASCOT}</button></div>`;
+  document.body.appendChild(box);
+  if (navigator.vibrate) navigator.vibrate([60, 60, 120]);
+  const close = () => box.remove();
+  box.querySelector('button').onclick = close;
+  box.onclick = (e) => { if (e.target === box) close(); };
+}
+
 export function renderObjectifs(root) {
+  checkGradeUp();
   const all = SITES;
   const n = doneCount(all);
   const g = gradeOf(n);
@@ -91,7 +112,9 @@ export function renderObjectifs(root) {
   drawMap(root);
 }
 
+let pendingRender = 0;
 function paintList(root) {
+  clearTimeout(pendingRender);
   const ul = root.querySelector('#obj-list');
   let list = placesOf(sector).sort((a, b) => a.name.localeCompare(b.name, 'fr'));
   if (filter === 'todo') list = list.filter((p) => !store.isDone(p));
@@ -104,7 +127,18 @@ function paintList(root) {
       <button type="button" class="see" data-k="${slugOf(p.name)}" aria-label="Voir ${esc(p.name)} sur la carte">Voir</button></li>`;
   }).join('') || `<li class="note">${filter === 'done' ? 'Rien de coché ici pour l\'instant.' : 'Tout est fait dans ce secteur. Chapeau.'}</li>`;
   const bySlug = (k) => SITES.find((p) => slugOf(p.name) === k);
-  ul.querySelectorAll('input').forEach((c) => { c.onchange = async () => { await store.setVisited(bySlug(c.dataset.k), c.checked); rerender(root); }; });
+  // Comme dans Rappels : la ligne cochée reste quelques secondes, barrée, le temps de se raviser, puis s'efface.
+  ul.querySelectorAll('input').forEach((c) => {
+    c.onchange = async () => {
+      const li = c.closest('li'), on = c.checked;
+      await store.setVisited(bySlug(c.dataset.k), on);
+      c.closest('.chk').classList.toggle('on', on);
+      const leaves = (on && filter === 'todo') || (!on && filter === 'done');
+      li.classList.toggle('leaving', leaves);
+      clearTimeout(pendingRender);
+      pendingRender = setTimeout(() => { if (root.isConnected) rerender(root); }, 3200);
+    };
+  });
   ul.querySelectorAll('.see').forEach((b) => { b.onclick = () => bus.emit('openPlace', bySlug(b.dataset.k)); });
 }
 

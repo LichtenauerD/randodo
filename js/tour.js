@@ -3,7 +3,7 @@
 import { SITES } from '../data/sites.js';
 import { store } from './state.js';
 import { settings } from './util.js';
-import { walkerSvg, dodoSvg } from './grades.js';
+import { walkerSvg, dodoSvg, MASCOT } from './grades.js';
 import { navigate } from './pages.js';
 import { openPlace, openHike, closeSheet } from './sheet.js';
 import { hikesFor } from './hikes.js';
@@ -17,6 +17,22 @@ async function until(sel, ms = 6000) {
   return null;
 }
 
+// Plusieurs éléments mis en lumière ensemble : une cible virtuelle qui les englobe.
+function union(sel, n) {
+  const els = [...document.querySelectorAll(sel)].slice(0, n);
+  if (!els.length) return null;
+  return {
+    get isConnected() { return els.every((e) => e.isConnected); },
+    scrollIntoView: (o) => els[0].scrollIntoView(o),
+    getBoundingClientRect() {
+      const r = els.map((e) => e.getBoundingClientRect());
+      const left = Math.min(...r.map((x) => x.left)), top = Math.min(...r.map((x) => x.top));
+      const right = Math.max(...r.map((x) => x.right)), bottom = Math.max(...r.map((x) => x.bottom));
+      return { left, top, right, bottom, width: right - left, height: bottom - top };
+    },
+  };
+}
+
 // Lieu de démonstration : un classique dont les randos sont calculées d'avance.
 const DEMO = ['Lac Blanc', 'Lac de Gérardmer', 'Cascade du Hohwald'];
 let T = null;
@@ -24,119 +40,94 @@ let T = null;
 const STEPS = [
   {
     id: 'hello', center: true,
-    text: 'Je te fais faire le tour de l\'appli ? Ça prend deux minutes, et tu pourras la revoir quand tu veux dans Réglages.',
-    dodo: 'Salut ! Moi c\'est le dodo. Je ne vole pas, mais je connais les sentiers du coin.',
+    dodo: `Salut, moi c'est ${MASCOT} ! Je ne vole pas, mais je connais tous les sentiers.`,
+    text: 'Petit tour de l\'appli ? Deux minutes, promis.',
     next: 'C\'est parti', skip: 'Plus tard',
   },
   {
-    id: 'finder', before: () => navigate('accueil'), target: '#hm-finder .fq',
-    text: 'Tout commence ici : d\'où tu pars. Juste dessous, le temps de route que tu acceptes pour aller marcher.',
-    dodo: 'Moi, je ferais trois heures de route pour une belle cascade. Mais je suis un dodo.',
-  },
-  {
-    id: 'level', target: '#hm-finder .flv',
-    text: 'Tu peux choisir un niveau. Facile, c\'est une balade tranquille ; Difficile, ça grimpe pour de vrai.',
-    dodo: 'Pour commencer, je conseille Facile. Mes petites pattes aussi.',
+    id: 'finder', before: () => navigate('accueil'), target: () => union('#hm-finder .fq', 2),
+    text: 'D\'où tu pars, combien de route, ton niveau : tout se règle ici.',
+    dodo: 'Trois heures de route pour une cascade ? Je l\'ai déjà fait.',
   },
   {
     id: 'search', target: '#hm-search',
-    text: 'Puis « Afficher les lieux » : les idées de sortie près de chez toi s\'affichent, avec leur temps de route.',
-    dodo: 'Et en général, il y en a plus que de week-ends dans l\'année.',
+    text: '« Afficher les lieux », et les idées tombent.',
+    dodo: 'Ouah, douze idées pour un seul week-end ?!',
   },
   {
     id: 'signs', before: async () => { navigate('carte'); await openPlace(T.place); }, target: () => $('#sheet .signs'),
-    text: 'Chaque lieu propose plusieurs boucles, rangées par niveau, avec leur distance et leur durée. Je t\'en ouvre une.',
-    dodo: 'Le lac Blanc, un grand classique. Même moi j\'y suis allé à pied.',
+    text: 'Chaque lieu propose plusieurs boucles, rangées par niveau.',
+    dodo: 'Moi, je prends toujours celle qui passe par la ferme-auberge.',
   },
   {
     id: 'facts', before: async () => { if (T.hike) openHike(T.hike, { place: T.place }); await wait(500); }, target: () => $('#sheet .facts'),
-    text: 'La fiche de la rando : distance, montée, durée de marche. Juste dessous, le profil se colore selon la pente : vert, ça roule ; rouge, ça pique.',
+    text: 'Distance, montée, durée. Juste dessous, le profil se colore selon la pente.',
     dodo: 'Dans le rouge, je fais semblant d\'admirer la vue pour reprendre mon souffle.',
   },
   {
     id: 'roadbook', skipIf: () => !$('#roadbook'), target: '#roadbook',
-    text: 'Le carnet de route : les balises à suivre, dans l\'ordre, avec leurs distances. Un coup d\'œil avant de partir, et le téléphone peut rester dans le sac.',
-    dodo: 'Rectangle rouge, anneau bleu, croix jaune… Je les connais tous. Enfin, presque.',
-  },
-  {
-    id: 'start', skipIf: () => !$('.start-box'), target: '.start-box',
-    text: 'Ici, tu sais d\'où part la boucle : un parking, une gare ou un bord de route. Le bouton t\'y emmène avec ton GPS habituel.',
-    dodo: 'Moi, j\'y vais à pied. Évidemment.',
+    text: 'Les balises à suivre, dans l\'ordre. Un coup d\'œil, et le téléphone reste dans le sac.',
+    dodo: 'Rectangle rouge, anneau bleu… J\'ai mes préférés.',
   },
   {
     id: 'save', target: '#a-save', interactive: true,
-    text: '« Garder hors ligne » range la rando dans ton téléphone, carte comprise : elle restera disponible même sans réseau, en pleine forêt. Tu peux essayer.',
-    dodo: 'Vas-y, appuie ! Je la retirerai avec toi à la fin, promis.',
+    text: 'La rando se range dans le téléphone et marche sans réseau. Essaie !',
+    dodo: 'En forêt, la 4G, c\'est comme moi en vol : inexistante.',
     done: () => T.hike && store.isSaved(T.hike.id),
     after: async () => { if (T.hike && !store.isSaved(T.hike.id)) await store.saveHike(T.hike); },
   },
   {
     id: 'gpx', target: '#a-gpx',
-    text: 'Petit aparté : un GPX, c\'est le format universel des traces de rando. Un petit fichier que presque toutes les applis GPS et les montres savent lire. Ce bouton te l\'envoie, par exemple vers Organic Maps.',
-    dodo: 'GPX, pour « GPS Exchange Format ». Je le ressors en soirée, ça impressionne toujours.',
+    text: 'Un GPX, c\'est le format universel des traces de rando : presque toutes les applis GPS et les montres le lisent.',
+    dodo: '« GPS Exchange Format ». Je le place en soirée, effet garanti.',
   },
   {
-    id: 'share', target: '#a-share',
-    text: 'Et pour proposer la sortie à tes amis, « Envoyer à un pote » leur envoie un lien qui ouvre directement cette rando.',
-    dodo: 'Marcher à plusieurs, c\'est meilleur. Surtout quand c\'est quelqu\'un d\'autre qui porte le pique-nique.',
-  },
-  {
-    id: 'go', target: '#a-go',
-    text: 'Le jour J, « Lancer la rando » te guide sur le terrain. Je te montre, en faisant marcher un randonneur imaginaire.',
-    dodo: 'Le randonneur imaginaire, c\'est moi. Je m\'entraîne.',
-  },
-  {
-    id: 'hud', before: async () => { if (T.hike) { startGuide(T.hike, { sim: true }); } await wait(1600); }, target: '.hud-top',
-    text: 'En haut : le chrono, les kilomètres et la montée qui restent. Quand un carrefour approche, la direction à prendre s\'affiche juste dessous.',
-    dodo: '« Dans 60 m, à gauche. » Oui, je parle comme un GPS maintenant.',
+    id: 'hud', before: async () => { if (T.hike) startGuide(T.hike, { sim: true }); await wait(1600); }, target: '.hud-top',
+    text: '« Lancer la rando » : chrono, distance restante, et la direction à chaque carrefour.',
+    dodo: '« Dans 60 m, à gauche. » Je parle GPS couramment.',
   },
   {
     id: 'panel', target: '.hud-panel',
-    text: 'En bas : la balise que tu suis, et ton profil en direct. Tu sais ce qui t\'attend : « 800 m de montée raide », puis « 1,2 km de plat ».',
-    dodo: 'Je te préviens avant les montées. C\'est ça, l\'amitié.',
+    text: 'La balise à suivre et ce qui t\'attend. Le petit bouton montagne déplie le profil.',
+    dodo: 'Astuce : si ça monte trop, refais tes lacets. Personne ne saura.',
   },
   {
     id: 'stop', target: '#hud-stop',
-    text: 'Arrivé au bout, « Terminer » : tu notes ta sortie, et elle rejoint ton historique.',
-    dodo: 'Je recommande de terminer par une tarte aux myrtilles. C\'est scientifique.',
+    text: '« Terminer », et ta sortie rejoint l\'historique.',
+    dodo: 'Je recommande de finir par une tarte aux myrtilles. C\'est scientifique.',
     after: () => { if (isGuiding()) stopGuide(); closeSheet(); },
   },
   {
     id: 'week', before: () => { if (isGuiding()) stopGuide(); closeSheet(); navigate('accueil'); }, target: '#hm-picks',
-    text: 'Chaque lundi, l\'accueil te propose de nouvelles idées de sortie. Celles que tu as déjà faites sont grisées, avec une coche.',
-    dodo: 'C\'est moi qui les choisis. Avec mon bec.',
+    text: 'Chaque lundi, de nouvelles idées. Celles déjà faites sont cochées.',
+    dodo: 'Choisies à vue de bec, rien que pour toi.',
   },
   {
     id: 'map', before: () => navigate('carte'), target: '#map', pad: -40,
-    text: 'La carte se parcourt librement : chaque pastille est un lieu de la sélection. Un appui long n\'importe où calcule des boucles autour de ce point.',
+    text: 'La carte se parcourt librement. Un appui long n\'importe où : des boucles autour.',
     dodo: 'Je me suis perdu une fois sur cette carte. C\'était formidable.',
   },
   {
     id: 'grade', before: () => navigate('objectifs'), target: '.grade-card', grow: true,
-    text: 'La Conquête : coche les lieux que tu as faits, ton territoire se colore en rouge sur la carte du massif, et ton dodo grandit avec toi.',
-    dodo: 'Regarde-moi grandir ! Bon, au début, je suis un œuf.',
-  },
-  {
-    id: 'sectors', target: '.sectors',
-    text: 'Pour chaque massif, le petit dodo grimpe sa montagne à mesure que tu avances. Il plante son drapeau quand tout est fait.',
-    dodo: 'Le Jura, c\'est mon préféré. Ne le dis pas aux Vosges.',
+    text: `Coche les lieux faits : ton territoire rougit, et ${MASCOT} grandit avec toi.`,
+    dodo: 'Ohh… Je ressemblais à ça, avant. Un petit œuf.',
   },
   {
     id: 'traces', before: async () => { navigate('traces'); await wait(300); }, target: () => (T.hike && document.querySelector(`#page .card[data-id="${CSS.escape(T.hike.id)}"] [data-a=del]`)) || $('#page .card [data-a=del]'),
     interactive: true,
-    text: 'Dans Traces, tes randos gardées hors ligne. Celle de tout à l\'heure est là : tu peux la supprimer avec ce bouton, c\'est comme ça qu\'on fait le ménage.',
-    dodo: 'Ne t\'inquiète pas, la rando, elle, ne bouge pas. Tu la retrouveras sur la carte.',
+    text: 'Tes traces gardées. Celle de tout à l\'heure est là : tu peux la supprimer.',
+    dodo: 'Le ménage, c\'est un peu de la rando. Enfin, presque.',
     done: () => T.hike && !store.isSaved(T.hike.id),
     after: async () => { if (T.hike && store.isSaved(T.hike.id) && !T.hadSaved) await store.removeHike(T.hike.id); },
   },
   {
     id: 'history', before: async () => { navigate('historique'); await wait(300); }, target: '#page', pad: -10,
-    text: 'Et l\'historique : toutes tes sorties, avec la date, la durée et tes notes. De quoi te souvenir du lac croisé il y a deux ans.',
+    text: 'Toutes tes sorties, avec la date, la durée et tes notes.',
     dodo: 'Moi, je me souviens de tout. Sauf de l\'endroit où j\'ai garé la voiture.',
   },
   {
     id: 'bye', center: true, before: () => navigate('accueil'),
-    text: 'La visite est finie. Tu peux la revoir à tout moment dans Réglages. Bonne marche !',
+    text: 'C\'est tout ! La visite se rejoue dans Réglages.',
     dodo: 'Allez, on y va ? À pied, bien sûr.',
     next: 'Terminer',
   },
