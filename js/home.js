@@ -201,20 +201,14 @@ async function countPreview() {
   if (!lab) return;
   const o = getOrigin(), q = getQ();
   if (!o) { lab.textContent = 'Voir les randos'; return; }
-  const types = q.groups.length ? GROUPS.filter((g) => q.groups.includes(g.id)).flatMap((g) => g.types) : [];
-  const kmMax = q.minutes / 1.35;
   const idx = await hikeIndex();
-  let n = 0;
-  for (const s of SITES) {
-    if (types.length && !types.includes(s.type)) continue;
-    if (dist([o.lat, o.lon], [s.lat, s.lon]) / 1000 > kmMax) continue;
-    const e = idx[slugOf(s.name)];
-    if (q.levels.length && e && !e.some((h) => q.levels.includes(h.level))) continue;
-    if (!fitsIdeal(q, s, idx)) continue;
-    n++;
-  }
+  const known = driveKnown(o);
+  // Même sélection que la recherche : le chiffre du bouton est le nombre de lieux affichés ensuite.
+  const n = selectPlaces(q, o, idx, known).length;
   const txt = n ? `Voir ${n > 1 ? 'les ' + n + ' lieux' : 'le lieu'}` : 'Chercher plus largement';
   if (lab.textContent !== txt) { lab.textContent = txt; lab.parentElement.classList.remove('bump'); void lab.offsetWidth; lab.parentElement.classList.add('bump'); }
+  // Temps de route réels pas encore connus pour ce départ : on les demande une fois, puis on recompte.
+  if (!known) driveMap(o).then((m) => { if (m) countPreview(); });
 }
 
 // Choix du point de départ : une commune.
@@ -326,40 +320,63 @@ function bindWeb(items) {
 }
 
 // ---------- Recherche guidée ----------
-async function driveTimes(origin, list) {
-  // Un seul appel pour tous les lieux ; en cas d'échec on garde l'estimation.
-  const coords = [origin, ...list].map((p) => p.lon.toFixed(5) + ',' + p.lat.toFixed(5)).join(';');
-  const j = await fetchJson(CONFIG.osrm + coords + '?sources=0&annotations=duration', {}, 15000);
-  if (!j || j.code !== 'Ok' || !j.durations || !j.durations[0]) throw new Error('réponse inattendue');
-  list.forEach((p, i) => { const s = j.durations[0][i + 1]; if (s != null) { p._min = s / 60; p._approx = false; } });
+// Temps de route réels depuis un départ vers tous les lieux du catalogue (OSRM, par paquets),
+// gardés 30 jours par départ. Sans réponse : estimation à partir de la distance.
+const driveMem = new Map();
+const driveKey = (o) => 'drive:' + o.lat.toFixed(3) + ',' + o.lon.toFixed(3);
+function driveKnown(o) { return driveMem.get(driveKey(o)) || null; }
+async function driveMap(o) {
+  const key = driveKey(o);
+  if (driveMem.has(key)) return driveMem.get(key);
+  const saved = await kv.get(key);
+  if (saved && Date.now() - saved.t < 30 * 86400000) { driveMem.set(key, saved.min); return saved.min; }
+  const list = SITES.filter((s) => dist([o.lat, o.lon], [s.lat, s.lon]) / 1000 < 260);
+  const min = {};
+  try {
+    for (let i = 0; i < list.length; i += 90) {
+      const part = list.slice(i, i + 90);
+      const coords = [o, ...part].map((p) => p.lon.toFixed(5) + ',' + p.lat.toFixed(5)).join(';');
+      const j = await fetchJson(CONFIG.osrm + coords + '?sources=0&annotations=duration', {}, 15000);
+      if (!j || j.code !== 'Ok' || !j.durations || !j.durations[0]) throw new Error('réponse inattendue');
+      part.forEach((p, k) => { const v = j.durations[0][k + 1]; if (v != null) min[slugOf(p.name)] = v / 60; });
+    }
+  } catch { return null; }
+  driveMem.set(key, min);
+  kv.set(key, { t: Date.now(), min });
+  return min;
+}
+
+// La sélection, commune au compteur du bouton et à la liste de résultats.
+function selectPlaces(q, origin, idx, drive) {
+  const types = q.groups.length ? GROUPS.filter((g) => q.groups.includes(g.id)).flatMap((g) => g.types) : [];
+  let out = [];
+  for (const s of SITES) {
+    if (types.length && !types.includes(s.type)) continue;
+    if (!fitsIdeal(q, s, idx)) continue;
+    const e = idx[slugOf(s.name)];
+    if (q.levels.length && e && !e.some((h) => q.levels.includes(h.level))) continue;
+    const real = drive && drive[slugOf(s.name)];
+    const min = real != null ? real : estMinutes(dist([origin.lat, origin.lon], [s.lat, s.lon]) / 1000);
+    if (min > q.minutes * 1.05) continue;
+    out.push(Object.assign(s, { _min: min, _approx: real == null }));
+  }
+  // Lieux déjà faits : écartés, sauf s'il n'y a plus rien à proposer.
+  const fresh = out.filter((p) => !store.isDone(p));
+  if (fresh.length >= 3 || want.hideDone) out = fresh;
+  return out.sort((a, b) => (b.curated ? 40 : 0) + b.score - b._min / 4 - ((a.curated ? 40 : 0) + a.score - a._min / 4));
 }
 
 export async function runSearch(q, origin) {
   const my = ++runId;
   lastSearch = { q, origin, results: null, note: '', busy: true };
   paintResults();
-  const types = q.groups.length ? GROUPS.filter((g) => q.groups.includes(g.id)).flatMap((g) => g.types) : [];
-  const kmMax = (q.minutes / 1.35) * 1.2; // marge : l'autoroute fait mieux que l'estimation
-  const near = (p) => { const km = dist([origin.lat, origin.lon], [p.lat, p.lon]) / 1000; return km <= kmMax ? km : null; };
-  const idx0 = await hikeIndex();
-  if (my !== runId) return;
-  let cands = [];
-  for (const s of SITES) { if (types.length && !types.includes(s.type)) continue; if (!fitsIdeal(q, s, idx0)) continue; const km = near(s); if (km !== null) cands.push(Object.assign(s, { _min: estMinutes(km), _approx: true })); }
-  // Seuls les lieux de la sélection sont proposés : ce sont de vraies destinations de rando (pas un château en ville).
-  const note = '';
-  // Lieux déjà faits : écartés, sauf s'il n'y a plus rien à proposer.
-  const fresh = cands.filter((p) => !store.isDone(p));
-  if (fresh.length >= 3 || want.hideDone) cands = fresh;
-  // Temps de route réels pour les 90 candidats les mieux placés.
-  cands.sort((a, b) => (b.curated ? 40 : 0) + b.score - b._min / 4 - ((a.curated ? 40 : 0) + a.score - a._min / 4));
-  const top = cands.slice(0, 90);
-  let approx = true;
-  try { await driveTimes(origin, top); approx = false; } catch { /* estimation conservée */ }
-  if (my !== runId) return;
-  const results = top.filter((p) => p._min <= q.minutes * 1.05).sort((a, b) => (b.curated ? 40 : 0) + b.score - b._min / 4 - ((a.curated ? 40 : 0) + a.score - a._min / 4)).slice(0, 30);
-  // Niveaux des lieux du catalogue : lus dans l'index précalculé, sans interroger les serveurs de sentiers.
   const idx = await hikeIndex();
+  const drive = await driveMap(origin);
   if (my !== runId) return;
+  const note = '';
+  const approx = !drive;
+  const results = selectPlaces(q, origin, idx, drive);
+  // Niveaux des lieux du catalogue : lus dans l'index précalculé, sans interroger les serveurs de sentiers.
   const levels = {};
   for (const p of results) {
     const e = p.curated && idx[slugOf(p.name)];
