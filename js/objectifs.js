@@ -104,11 +104,17 @@ async function drawMap(root) {
   const data = await loadGeo(sector);
   if (!el.isConnected) return;
   const places = placesOf(sector);
+  // Hauteur de la carte calée sur les proportions du secteur : le fond peint remplit tout le cadre.
+  if (data && data.bbox) {
+    const bx = data.bbox, k = Math.cos(((bx[1] + bx[3]) / 2) * Math.PI / 180);
+    const ratio = (bx[3] - bx[1]) / ((bx[2] - bx[0]) * k);
+    el.style.height = Math.round(Math.max(260, Math.min(560, el.clientWidth * ratio))) + 'px';
+  }
   gmap = L.map(el, { zoomControl: false, attributionControl: false, zoomSnap: 0.25, preferCanvas: false });
   const svg = L.svg({ padding: 0.3 }).addTo(gmap);
   const b = data ? data.bbox : null;
   const bounds = b ? L.latLngBounds([b[1], b[0]], [b[3], b[2]]) : L.latLngBounds(places.map((p) => [p.lat, p.lon]));
-  gmap.fitBounds(bounds, { padding: [6, 6] });
+  gmap.fitBounds(bounds, { padding: [0, 0] });
   gmap.setMaxBounds(bounds.pad(0.15));
   gmap.setMinZoom(gmap.getZoom() - 0.5);
   const ll = (r) => r.map(([x, y]) => [y, x]);

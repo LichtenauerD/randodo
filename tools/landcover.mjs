@@ -31,18 +31,25 @@ async function landClasses(b, W, H, dx, dy) {
       console.log(`  occupation du sol ${name} : ${(i1 - i0) * (j1 - j0)} points`);
     } catch (e) { console.log(`  occupation du sol ${name} indisponible : ${e.message}`); }
   }
-  // Filtre majoritaire 5 × 5 : des taches franches plutôt qu'un bruit de pixels.
+  // Filtre majoritaire 5 × 5, trois passes : de grandes taches franches plutôt qu'un bruit de pixels.
+  let cur = cls;
+  for (let k = 0; k < 3; k++) cur = mode(cur, W, H);
+  return cur;
+}
+
+function mode(cls, W, H) {
   const out = new Uint8Array(W * H);
-  const cnt = new Map();
+  const cnt = new Uint16Array(256);
   for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) {
-    cnt.clear(); let best = cls[j * W + i], bn = 0;
+    let best = cls[j * W + i], bn = 0;
     for (let v = -2; v <= 2; v++) for (let u = -2; u <= 2; u++) {
       const x = i + u, y = j + v; if (x < 0 || y < 0 || x >= W || y >= H) continue;
-      const c = cls[y * W + x]; const n = (cnt.get(c) || 0) + 1; cnt.set(c, n); if (n > bn) { bn = n; best = c; }
+      const c = cls[y * W + x]; const n = ++cnt[c]; if (n > bn) { bn = n; best = c; }
     }
     // L'eau et le bâti restent nets même petits.
     const c0 = cls[j * W + i];
-    out[j * W + i] = (c0 === 80 || c0 === 50) && (cnt.get(c0) || 0) >= 6 ? c0 : best;
+    out[j * W + i] = (c0 === 80 || c0 === 50) && cnt[c0] >= 7 ? c0 : best;
+    for (let v = -2; v <= 2; v++) for (let u = -2; u <= 2; u++) { const x = i + u, y = j + v; if (x >= 0 && y >= 0 && x < W && y < H) cnt[cls[y * W + x]] = 0; }
   }
   return out;
 }

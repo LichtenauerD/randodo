@@ -418,7 +418,7 @@ button:active:not(:disabled) { transform: scale(.97); }
 .sec b { font: 700 .86rem var(--sign); } .sec span { font-size: .72rem; color: var(--gris); }
 .sec.on { border-color: var(--violet); box-shadow: inset 0 0 0 1.5px var(--violet); }
 .geo-box { border-radius: 18px; overflow: hidden; background: #e3ecd9; box-shadow: 0 1px 0 var(--trait); }
-.geo-map { height: 400px; background: #dfe8cf; }
+.geo-map { height: 400px; background: #d3dfbd; }
 .geo-map.leaflet-container { background: #dfe8cf; }
 .geo-legend { display: flex; flex-wrap: wrap; gap: 4px 12px; padding: 8px 12px; background: var(--papier); font-size: .74rem; color: var(--gris); }
 .lg { display: inline-block; width: 11px; height: 11px; border-radius: 50%; vertical-align: -1px; margin-right: 4px; }
