@@ -8,6 +8,14 @@ import { kv, settings, dist, simplify, walkMinutes, lineLength, bboxOf, uid, cum
 
 const TTL = 30 * 86400000;
 const FORMAT = 5;
+
+// Écarte les randos trop routières (plus de 35 % sur route) quand le même niveau a une autre proposition.
+export function tidy(hikes) {
+  const roady = (h) => (h.road || 0) > 0.35;
+  const out = hikes.filter((h) => !roady(h) || !hikes.some((o) => o !== h && o.level === h.level && !roady(o)));
+  // À niveau égal, la moins routière d'abord.
+  return out.sort((a, b) => (a.level === b.level ? (a.road || 0) - (b.road || 0) : 0));
+}
 const tick = () => new Promise((r) => setTimeout(r, 30));
 
 function scoreOf(c) {
@@ -61,6 +69,7 @@ export async function hikesFor(place, onStep = () => {}, force = false) {
         const pre = await res.json();
         if (pre.v === FORMAT && pre.hikes && pre.hikes.length) {
           for (const h of pre.hikes) h.placeId = place.id;
+          pre.hikes = tidy(pre.hikes);
           const out = { ...pre, t: Date.now(), pre: true };
           await kv.set(key, out);
           return out;
@@ -100,7 +109,7 @@ export async function hikesFor(place, onStep = () => {}, force = false) {
     .map((p) => ({ id: p.id, name: p.name, symbol: p.symbol }));
   const partial = circ.partial.filter((p) => !hikes.some((h) => h.relId === p.id)).slice(0, 5).map((p) => ({ id: p.id, name: p.name, symbol: p.symbol }));
   const out = {
-    v: FORMAT, t: Date.now(), hikes, passing, partial,
+    v: FORMAT, t: Date.now(), hikes: tidy(hikes), passing, partial,
     reason: hikes.length ? '' : (res.reason || 'Aucune boucle raisonnable trouvée sur les sentiers cartographiés.'),
     noEle: hikes.some((h) => h.up === null),
   };
