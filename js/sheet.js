@@ -65,7 +65,7 @@ function headHtml(p) {
   const done = store.doneEntry(p);
   return `<div class="place-head">
     <div class="photo" style="${img ? `background-image:url('${img.replace(/'/g, '%27')}')` : `color:${t.color}`}">${img ? '' : glyph(p.type)}</div>
-    <div><h2>${esc(p.name)}</h2><p class="meta">${esc(meta)}</p>${p.desc ? `<p class="desc">${esc(p.desc)}</p>` : ''}${p.local && p.local.credit ? `<p class="credit">Photo : ${esc(p.local.credit)}</p>` : ''}</div>
+    <div><h2>${esc(p.name)}</h2><p class="meta">${esc(meta)}</p>${p.desc ? `<p class="desc">${esc(p.desc)}</p>` : ''}${p.local && p.local.credit ? `<p class="credit">Photo : ${p.local.url ? `<a href="${esc(p.local.url)}" target="_blank" rel="noopener">${esc(p.local.credit)}</a>` : esc(p.local.credit)}</p>` : ''}</div>
   </div>
   <div class="quick">
     <button type="button" class="chip heart${store.isWished(p) ? ' on' : ''}" id="q-wish">${IC.heart}${store.isWished(p) ? 'Dans mes envies' : 'Ajouter à mes envies'}</button>

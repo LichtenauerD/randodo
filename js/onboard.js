@@ -30,7 +30,7 @@ export function openOnboarding(onDone = () => {}) {
     host.querySelector('.ob-grid').innerHTML = list.map((p) => {
       const k = slugOf(p.name);
       return `<button type="button" class="ob-card${picked.has(k) ? ' on' : ''}" data-k="${k}" aria-pressed="${picked.has(k)}">
-        <img src="${esc(p.local.file)}" alt="" loading="lazy"><span class="ob-name">${esc(p.name)}</span><span class="ob-tick" aria-hidden="true"></span></button>`;
+        <img src="${esc(p.local.file)}" alt="" loading="lazy"><span class="ob-name">${esc(p.name)}<small>${esc(p.local.credit.split(',')[0])}</small></span><span class="ob-tick" aria-hidden="true"></span></button>`;
     }).join('');
     host.querySelectorAll('.ob-card').forEach((b) => {
       b.onclick = () => {
