@@ -349,7 +349,9 @@ a.btn { text-decoration: none; color: inherit; }
 
 /* ---------- Vie de l'interface ---------- */
 .hello { position: relative; }
-.hello .walk { display: block; width: 100%; height: 34px; margin: 10px 0 -6px; overflow: visible; }
+.hello .mts { display: block; width: calc(100% + 32px); height: 96px; margin: 4px -16px 0; }
+.hello .mts path { stroke: none; }
+.hello .walk { display: block; width: 100%; height: 34px; margin: -38px 0 -6px; overflow: visible; position: relative; }
 .hello .walk path { fill: none; stroke: var(--violet); stroke-width: 3.5; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 1; animation: drawline 1.6s .2s cubic-bezier(.45,.05,.3,1) forwards; }
 .hello .walk circle { fill: var(--balise); opacity: 0; animation: fadein .3s 1.7s forwards; }
 /* Après le tracé : des pas blancs qui avancent sur le fil, et la balise d'arrivée qui pulse. */

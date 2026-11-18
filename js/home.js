@@ -270,7 +270,12 @@ export async function renderHome(el) {
   const name = settings.get('pseudo', '').trim();
   el.innerHTML = `<div class="home">
     <header class="hello"><img src="icons/icon-192.png" alt="" width="56" height="56"><h1>Salut${name ? ' ' + esc(name) : ''}</h1><p>${SEASON[new Date().getMonth()]}</p>
-      <svg class="walk" viewBox="0 0 320 34" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" d="M3 27 C 40 27, 52 9, 92 12 S 142 31, 182 21 S 240 5, 272 10 S 300 20, 312 9"/><path class="ants" pathLength="100" d="M3 27 C 40 27, 52 9, 92 12 S 142 31, 182 21 S 240 5, 272 10 S 300 20, 312 9"/><circle class="halo" cx="312" cy="9" r="5"/><circle cx="312" cy="9" r="5"/></svg></header>
+      <svg class="mts" viewBox="0 0 400 110" preserveAspectRatio="none" aria-hidden="true">
+        <path fill="#9fb8a6" d="M0 70 L30 52 L58 62 L92 30 L120 50 L150 38 L178 56 L214 18 L246 46 L270 36 L300 58 L336 24 L368 48 L400 34 V110 H0Z"/>
+        <path fill="#2c5a47" d="M0 84 L40 58 L72 72 L112 40 L150 66 L196 34 L236 70 L270 54 L308 78 L348 46 L400 68 V110 H0Z"/>
+        <path fill="#e9efe9" d="M112 40 L122 50 L116 49 L110 54 L104 48Z M196 34 L207 45 L200 44 L193 49 L188 43Z M348 46 L357 55 L351 54 L345 58 L341 53Z"/>
+        <path fill="#173b2f" d="M0 98 L52 80 L96 90 L150 72 L204 92 L256 78 L314 96 L360 82 L400 92 V110 H0Z"/>
+      </svg><svg class="walk" viewBox="0 0 320 34" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" d="M3 27 C 40 27, 52 9, 92 12 S 142 31, 182 21 S 240 5, 272 10 S 300 20, 312 9"/><path class="ants" pathLength="100" d="M3 27 C 40 27, 52 9, 92 12 S 142 31, 182 21 S 240 5, 272 10 S 300 20, 312 9"/><circle class="halo" cx="312" cy="9" r="5"/><circle cx="312" cy="9" r="5"/></svg></header>
     <section class="finder" id="hm-finder"></section>
     <div id="hm-results"></div>
     <section class="week" id="hm-picks">${picksHtml(picks)}</section>
