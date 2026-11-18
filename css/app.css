@@ -413,13 +413,13 @@ button:active:not(:disabled) { transform: scale(.97); }
 .sec b { font: 700 .86rem var(--sign); } .sec span { font-size: .72rem; color: var(--gris); }
 .sec.on { border-color: var(--violet); box-shadow: inset 0 0 0 1.5px var(--violet); }
 .geo-box { border-radius: 18px; overflow: hidden; background: #e3ecd9; box-shadow: 0 1px 0 var(--trait); }
-.geo-map { height: 380px; background: #e3ecd9; }
-.geo-map.leaflet-container { background: #e3ecd9; }
+.geo-map { height: 400px; background: #dfe8cf; }
+.geo-map.leaflet-container { background: #dfe8cf; }
 .geo-legend { display: flex; flex-wrap: wrap; gap: 4px 12px; padding: 8px 12px; background: var(--papier); font-size: .74rem; color: var(--gris); }
 .lg { display: inline-block; width: 11px; height: 11px; border-radius: 50%; vertical-align: -1px; margin-right: 4px; }
 .lg.done { background: var(--violet); box-shadow: 0 0 0 2px #fff, 0 0 0 3px var(--violet); } .lg.todo { background: #fff; border: 2px solid #2a9c9c; }
 .lg.hatch { border-radius: 2px; background: repeating-linear-gradient(45deg, rgba(138,31,209,.5) 0 2px, rgba(138,31,209,.08) 2px 5px); }
-.lg.mid { border-radius: 2px; background: rgba(208,139,78,.6); } .lg.high { border-radius: 2px; background: rgba(125,78,46,.75); }
+.lg.mid { border-radius: 2px; background: rgba(201,106,43,.6); } .lg.high { border-radius: 2px; background: rgba(107,63,34,.75); }
 .town-lab { font: 600 10px var(--text); color: #5e6b64; white-space: nowrap; text-shadow: 0 0 2px #fff, 0 0 2px #fff; }
 .valley-lab { font: italic 600 10px var(--text); color: #8a6a00; white-space: nowrap; text-shadow: 0 0 2px #fff, 0 0 3px #fff; }
 .geo-pop { display: flex; flex-direction: column; gap: 6px; min-width: 160px; } .geo-pop small { color: var(--gris); margin-top: -4px; }
@@ -469,3 +469,4 @@ ol.grades li span { display: flex; flex-direction: column; } ol.grades small { c
 .crew { display: grid; gap: 8px; margin-bottom: 14px; }
 .mate { display: flex; align-items: center; gap: 10px; background: var(--papier); border-radius: 14px; padding: 8px 12px; box-shadow: 0 1px 0 var(--trait); }
 .mate span { display: flex; flex-direction: column; } .mate small { color: var(--gris); font-size: .8rem; }
+.offline-sec { margin-top: 12px; width: 100%; }

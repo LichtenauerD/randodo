@@ -3,7 +3,8 @@ import { SITES } from './places.js';
 import { TYPES } from './config.js';
 import { store, bus } from './state.js';
 import { glyph } from './map.js';
-import { esc, kv, settings, slugOf } from './util.js';
+import { esc, kv, settings, slugOf, toast } from './util.js';
+import { prefetchPlace } from './hikes.js';
 import { GRADES, DODO_STAGES, gradeOf, dodoSvg, climbSvg, placeClimbers } from './grades.js';
 
 export const SECTORS = [
@@ -65,6 +66,7 @@ export function renderObjectifs(root) {
     <div class="sectors" role="tablist">${sec.map((s) => `<button type="button" role="tab" class="sec${s.id === sector ? ' on' : ''}" data-s="${s.id}">${climbSvg(s.pct, 92, 54)}<b>${s.name}</b><span>${s.done} / ${s.total}</span></button>`).join('')}</div>
     <section class="geo-box"><div id="geo-map" class="geo-map"></div>
       <div class="geo-legend"><span><i class="lg done"></i>fait</span><span><i class="lg todo"></i>à faire</span><span><i class="lg hatch"></i>secteur exploré</span><span><i class="lg mid"></i>800 m</span><span><i class="lg high"></i>1 500 m</span></div></section>
+    <button type="button" class="btn wide offline-sec" id="obj-dl">${dlLabel()}</button>
     <section class="geo-list"><div class="seg" role="tablist">
       <button type="button" data-f="todo" class="${filter === 'todo' ? 'on' : ''}">À faire</button><button type="button" data-f="done" class="${filter === 'done' ? 'on' : ''}">Faits</button><button type="button" data-f="all" class="${filter === 'all' ? 'on' : ''}">Tous</button></div>
       <ul class="checklist" id="obj-list"></ul></section>
@@ -74,6 +76,7 @@ export function renderObjectifs(root) {
   root.querySelectorAll('.sec').forEach((b) => { b.onclick = () => { sector = b.dataset.s; settings.set('objSector', sector); renderObjectifs(root); }; });
   root.querySelectorAll('.seg button').forEach((b) => { b.onclick = () => { filter = b.dataset.f; root.querySelectorAll('.seg button').forEach((x) => x.classList.toggle('on', x === b)); paintList(root); }; });
   root.querySelector('#obj-help').onclick = openHelp;
+  root.querySelector('#obj-dl').onclick = () => downloadSector(root.querySelector('#obj-dl'));
   paintList(root);
   drawMap(root);
 }
@@ -111,8 +114,8 @@ async function drawMap(root) {
   const ll = (r) => r.map(([x, y]) => [y, x]);
   if (data) {
     const poly = (rings, o) => L.polygon(rings.map(ll), { renderer: svg, interactive: false, ...o }).addTo(gmap);
-    for (const p of data.relief.mid) poly(p, { stroke: false, fillColor: '#d08b4e', fillOpacity: 0.42 });
-    for (const p of data.relief.high) poly(p, { stroke: false, fillColor: '#7d4e2e', fillOpacity: 0.55 });
+    for (const p of data.relief.mid) poly(p, { stroke: false, fillColor: '#c96a2b', fillOpacity: 0.45 });
+    for (const p of data.relief.high) poly(p, { stroke: false, fillColor: '#6b3f22', fillOpacity: 0.6 });
     for (const v of data.valleys) for (const l of v.lines) L.polyline(ll(l), { renderer: svg, color: '#f5b700', weight: 14, opacity: 0.3, lineCap: 'round', interactive: false }).addTo(gmap);
     for (const r of data.rivers) for (const l of r.lines) L.polyline(ll(l), { renderer: svg, color: '#5d9cc9', weight: r.major ? 4.5 : 2, opacity: 0.9, interactive: false }).addTo(gmap);
     for (const lk of data.lakes) L.polygon(ll(lk), { renderer: svg, stroke: true, color: '#5d9cc9', weight: 1, fillColor: '#8fc1e3', fillOpacity: 1, interactive: false }).addTo(gmap);
@@ -141,6 +144,29 @@ async function drawMap(root) {
       box.querySelector('[data-act=see]').onclick = () => bus.emit('openPlace', p);
     });
   }
+}
+
+// Hors ligne par secteur : randos précalculées de chaque lieu et carte du secteur, gardées sur le téléphone.
+const dlKey = () => 'offline:' + sector;
+function dlLabel() {
+  const d = settings.get(dlKey(), '');
+  const name = (SECTORS.find((s) => s.id === sector) || {}).name;
+  return d ? `${name} gardé hors ligne (le ${d.split('-').reverse().slice(0, 2).join('/')}) · mettre à jour` : `Garder ${name} hors ligne`;
+}
+async function downloadSector(btn) {
+  const list = placesOf(sector);
+  btn.disabled = true;
+  let ok = 0, k = 0;
+  await loadGeo(sector);
+  for (const p of list) {
+    k++;
+    btn.textContent = `Téléchargement… ${k} / ${list.length}`;
+    try { if (await prefetchPlace(p)) ok++; } catch { /* lieu suivant */ }
+  }
+  settings.set(dlKey(), new Date().toISOString().slice(0, 10));
+  btn.disabled = false;
+  btn.textContent = dlLabel();
+  toast(`${ok} lieux sur ${list.length} gardés hors ligne. Les fonds de carte se gardent rando par rando (« Garder hors ligne »).`, 5000);
 }
 
 function openHelp() {

@@ -55,12 +55,31 @@ async function measure(h) {
   return h;
 }
 
+// Télécharge et garde les randos précalculées d'un lieu de la sélection. Renvoie true si c'est fait.
+export async function prefetchPlace(place) {
+  const key = 'rt:' + place.id;
+  const cached = await kv.get(key);
+  if (cached && cached.v === FORMAT && cached.pre) return true;
+  const res = await fetch('data/hikes/' + slugOf(place.name) + '.json', { cache: 'no-cache' });
+  if (!res.ok) return false;
+  const pre = await res.json();
+  if (pre.v !== FORMAT || !pre.hikes || !pre.hikes.length) return false;
+  for (const h of pre.hikes) h.placeId = place.id;
+  pre.hikes = tidy(pre.hikes);
+  await kv.set(key, { ...pre, t: Date.now(), pre: true });
+  return true;
+}
+
 export async function hikesFor(place, onStep = () => {}, force = false) {
   const key = 'rt:' + place.id;
+  let stale = null;
   if (!force) {
     const cached = await kv.get(key);
     if (cached && cached.v === FORMAT && Date.now() - cached.t < (cached.noEle ? 15 * 60000 : TTL)) return cached;
+    if (cached && cached.v === FORMAT) stale = cached;
   }
+  // Sans réseau, une ancienne version gardée vaut mieux que rien.
+  if (stale && typeof navigator !== 'undefined' && navigator.onLine === false) return stale;
   // Lieux du catalogue : randos précalculées chaque semaine, servies avec l'appli (instantané).
   if (place.curated && !force) {
     try {
@@ -78,7 +97,8 @@ export async function hikesFor(place, onStep = () => {}, force = false) {
     } catch { /* pas de fichier : on calcule sur place */ }
   }
   onStep('Chargement des sentiers autour du lieu');
-  const els = await overpass(qGraph(place.lat, place.lon, CONFIG.graphRadius));
+  let els;
+  try { els = await overpass(qGraph(place.lat, place.lon, CONFIG.graphRadius)); } catch (err) { if (stale) return stale; throw err; }
   onStep('Recherche des boucles possibles');
   await tick();
   const raw = els.filter((e) => e.type === 'way' && e.geometry && e.tags && e.tags.highway);

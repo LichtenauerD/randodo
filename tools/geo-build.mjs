@@ -114,9 +114,10 @@ for (const sector of ['vosges', 'foret-noire', 'jura', 'suisse']) {
     for (const r of rs) { if (areaKm2(r) < 0.04) continue; const s = ring(r, 0.0006); if (s) lakes.push(s); }
   }
   const names = [...RIVERS[sector].major, ...RIVERS[sector].minor, ...VALLEYS[sector].map((v) => v[1])];
-  const rv = await overpass(`[out:json][timeout:240];way["waterway"="river"]["name"~"^(${[...new Set(names)].join('|')})$"](${bb});out geom;`);
+  // En France, les noms de rivières portent leur article dans OpenStreetMap (« La Bruche », « L'Ill »).
+  const rv = await overpass(`[out:json][timeout:240];way["waterway"="river"]["name"~"^((La|Le|Les) |L'|L’)?(${[...new Set(names)].join('|')})$"](${bb});out geom;`);
   const rivers = {};
-  for (const w of rv) { const n = w.tags.name; (rivers[n] = rivers[n] || []).push(simplify(w.geometry.map((p) => [p.lon, p.lat]), 0.002).map(([x, y]) => [R4(x), R4(y)])); }
+  for (const w of rv) { const n = w.tags.name.replace(/^((La|Le|Les) |L'|L’)/, ''); (rivers[n] = rivers[n] || []).push(simplify(w.geometry.map((p) => [p.lon, p.lat]), 0.002).map(([x, y]) => [R4(x), R4(y)])); }
   const riverOut = Object.entries(rivers).map(([name, lines]) => ({ name, major: RIVERS[sector].major.includes(name), lines }));
   const valleys = VALLEYS[sector].map(([name, river, vb]) => ({ name, lines: (rivers[river] || []).map((l) => l.filter(([x, y]) => x >= vb[0] && x <= vb[2] && y >= vb[1] && y <= vb[3])).filter((l) => l.length > 1) })).filter((v) => v.lines.length);
   console.log(`  eau : ${lakes.length} lacs, ${riverOut.length} rivières, ${valleys.length} vallées`);
