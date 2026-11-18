@@ -21,7 +21,7 @@ const words = (s) => norm(s).split(/\s+/).filter((w) => w.length > 2 && !STOP.ha
 const km = (a, b) => { const r = Math.PI / 180; const x = (b.lon - a.lon) * r * Math.cos((a.lat + b.lat) / 2 * r), y = (b.lat - a.lat) * r; return Math.hypot(x, y) * 6371; };
 
 const end = new Date(); end.setUTCDate(1); end.setUTCDate(0); // dernier jour du mois écoulé
-const start = new Date(end); start.setUTCMonth(start.getUTCMonth() - 11); start.setUTCDate(1);
+const start = new Date(Date.UTC(end.getUTCFullYear() - 1, end.getUTCMonth() + 1, 1)); // 12 mois pleins
 const ymd = (d) => d.toISOString().slice(0, 10).replace(/-/g, '');
 
 async function articleOn(lang, p) {
@@ -35,8 +35,12 @@ async function articleOn(lang, p) {
   const g = await get(`${api}&action=query&list=geosearch&gsradius=2000&gslimit=15&gscoord=${p.lat}|${p.lon}`);
   for (const a of (g && g.query && g.query.geosearch) || []) {
     const w = words(a.title);
-    if (want.some((x) => w.includes(x))) return a.title;
+    if (want.some((x) => w.some((y) => y === x || (Math.min(x.length, y.length) >= 5 && (y.startsWith(x) || x.startsWith(y)))))) return a.title;
   }
+  // 3. La recherche plein texte : premier article situé à moins de 5 km du lieu.
+  const q = await get(`${api}&action=query&generator=search&gsrlimit=5&gsrsearch=${encodeURIComponent(p.name)}&prop=coordinates`);
+  const hits = Object.values((q && q.query && q.query.pages) || {}).sort((a, b) => a.index - b.index);
+  for (const h of hits) if (h.coordinates && km(p, h.coordinates[0]) < 5) return h.title;
   return null;
 }
 
