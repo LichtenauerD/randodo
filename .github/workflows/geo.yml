@@ -1,0 +1,41 @@
+name: Données Géographie
+on:
+  workflow_dispatch:
+    inputs:
+      only:
+        description: 'Secteurs (vosges, foret-noire, jura, suisse ; vide : tous)'
+        required: false
+        default: ''
+permissions:
+  contents: write
+concurrency:
+  group: geo
+  cancel-in-progress: false
+jobs:
+  geo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --prefix tools --no-audit --no-fund
+      - uses: actions/cache@v4
+        with:
+          path: dem
+          key: dem-geo-v1
+      - name: Construction
+        env:
+          ONLY: ${{ github.event.inputs.only }}
+        run: node tools/geo-build.mjs
+      - name: Enregistrement
+        if: always()
+        run: |
+          git config user.name "randodo-bot"
+          git config user.email "randodo-bot@users.noreply.github.com"
+          git add data/geo || true
+          if git diff --cached --quiet; then echo "Rien de nouveau."; exit 0; fi
+          git commit -m "Données Géographie du $(date +%F)"
+          git pull --rebase -q
+          git push
