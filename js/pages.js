@@ -226,7 +226,7 @@ export function askCommunity(after) {
   $('#cm-yes', box).onclick = async () => { closeModal(); await joinCommunity(); if (after) after(); };
   $('#cm-no', box).onclick = () => { closeModal(); soloCommunity(); if (after) after(); };
 }
-bus.on('log', pushProgress);
+bus.on('log', () => pushProgress());
 
 export async function pushCommunity(e, quiet) {
   const who = settings.get('pseudo', '').trim();
@@ -243,10 +243,37 @@ export async function pushCommunity(e, quiet) {
     if (x) { x.shared = false; kv.set('log', store.log); }
   }
 }
+// Retrait d'une rando du groupe. En cas d'échec (réseau), la demande est gardée et refaite plus tard.
+async function unshare(id) {
+  const todo = new Set(settings.get('pendingDel', [])); todo.add(id); settings.set('pendingDel', [...todo]);
+  await flushDeletes();
+}
+async function flushDeletes() {
+  const todo = settings.get('pendingDel', []);
+  if (!todo.length || !communityUrl()) return;
+  const left = [];
+  for (const id of todo) { try { await post({ action: 'delete', owner: deviceKey(), id }); } catch { left.push(id); } }
+  settings.set('pendingDel', left);
+}
+// Empreinte publique de ce téléphone, calculée comme le script du groupe.
+async function myPid() {
+  try {
+    const h = new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode('randodo:' + deviceKey())));
+    return [...h.slice(0, 6)].map((b) => b.toString(16).padStart(2, '0')).join('');
+  } catch { return null; }
+}
 async function loadCommunity() {
   const url = communityUrl();
+  await flushDeletes();
   const j = await fetchJson(url + (url.includes('?') ? '&' : '?') + 'action=list', { redirect: 'follow' }, 20000);
   if (!j.ok) throw new Error(j.error || 'réponse inattendue');
+  // Mes randos encore dans le groupe mais supprimées de mon historique : on les retire.
+  const me = await myPid(), mine = new Set(store.log.map((e) => e.id));
+  const orphans = me ? (j.entries || []).filter((e) => e.pid === me && !mine.has(String(e.id))) : [];
+  if (orphans.length) {
+    for (const e of orphans) await unshare(String(e.id));
+    j.entries = j.entries.filter((e) => !orphans.includes(e));
+  }
   const entries = (j.entries || []).sort((a, b) => (a.date < b.date ? 1 : -1));
   await kv.set('community', { t: Date.now(), entries });
   await kv.set('members', Array.isArray(j.members) ? j.members : []);
@@ -339,8 +366,8 @@ function renderHistory() {
         else if (b.dataset.a === 'share') { e.shared = true; await kv.set('log', store.log); await pushCommunity(e); renderHistory(); }
         else if (b.dataset.a === 'del') {
           if (!confirm('Supprimer cette rando de ton historique ?')) return;
-          if (e.shared && communityUrl()) post({ action: 'delete', owner: deviceKey(), id: e.id }).catch(() => {});
-          store.removeLog(e.id);
+          await store.removeLog(e.id);
+          if (communityUrl()) unshare(e.id);
         }
       };
     });

@@ -238,6 +238,10 @@ const RAW = [
   ['Grotte Sarrasine', 'grotte', 46.9652, 6.0082, 'Jura', 'FR', 'Immense porche d\'où jaillit le Lison en crue.'],
   ['Grotte des Faux-Monnayeurs', 'grotte', 47.0290, 6.2882, 'Jura', 'FR', 'Grotte dans la falaise au-dessus de la Loue.'],
   ['Fort de Mutzig', 'chateau', 48.5587, 7.4572, 'Vosges', 'FR', 'Fort de 1893 en forêt sur une colline, loin du centre de Mutzig.'],
+  // Ajouts de novembre 2026 (toujours en fin de liste : l'identifiant d'un lieu dépend de sa position).
+  ['Geissfels', 'rocher', 48.6715, 7.2913, 'Vosges', 'FR', 'Rocher-belvédère en grès à 600 m au-dessus de Reinhardsmunster, face au rocher de Dabo.'],
+  ['Grotte Saint-Vit et Rappenfels', 'grotte', 48.7294, 7.3226, 'Vosges', 'FR', 'Grotte-chapelle sous un gros rocher, jardin alpestre et vue sur le Haut-Barr ; le piton du Rappenfels est tout proche.'],
+  ['Château du Grand-Geroldseck', 'chateau', 48.7189, 7.3322, 'Vosges', 'FR', 'Ruine au donjon carré sur un éperon au-dessus de Haegen, à deux pas du Haut-Barr.'],
 ];
 
 export const SITES = RAW.map(([name, type, lat, lon, massif, country, desc], i) => ({
