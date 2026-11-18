@@ -591,8 +591,12 @@ function renderSettings() {
     if (t.length < 3) { toast('Écris quelques mots d\'abord.'); return; }
     const info = { message: t, who: settings.get('pseudo', ''), version: VERSION, screen: 'réglages', device: navigator.userAgent.slice(0, 200) };
     if (!groupAddress()) { location.href = 'mailto:?subject=' + encodeURIComponent('Randodo ' + VERSION) + '&body=' + encodeURIComponent(t); return; }
-    try { await post({ action: 'feedback', owner: deviceKey(), ...info }); $('#s-fb', p).value = ''; toast('Merci ! Message bien envoyé.'); }
+    const btn = $('#s-fb-send', p);
+    if (btn.disabled) return;
+    btn.disabled = true; btn.textContent = 'Envoi…';
+    try { await post({ action: 'feedback', owner: deviceKey(), ...info, version: 'v' + VERSION }); $('#s-fb', p).value = ''; toast('Merci ! Message bien envoyé.'); }
     catch (err) { toast('Envoi impossible : ' + err.message, 5000); }
+    btn.disabled = false; btn.textContent = 'Envoyer';
   };
   $('#s-tuto', p).onclick = () => startTour();
   $('#s-wipe', p).onclick = () => wipeAll();
