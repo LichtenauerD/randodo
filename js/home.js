@@ -64,7 +64,31 @@ function locateMe() {
 }
 
 // ---------- Suggestions de la semaine (tirées de la sélection, renouvelées chaque lundi) ----------
+// Idées de la semaine : tirées une fois le lundi puis gardées telles quelles jusqu'au lundi suivant,
+// quels que soient les réglages touchés entre-temps. Les semaines passées sont gardées pour l'historique.
+function mondayOf(d = new Date()) { const m = new Date(d); m.setHours(0, 0, 0, 0); m.setDate(m.getDate() - ((m.getDay() + 6) % 7)); return m; }
 function weeklyPicks(origin) {
+  const week = isoWeek();
+  const saved = settings.get('weekPicks', null);
+  if (saved && saved.week === week && (saved.hasOrigin || !origin)) {
+    const picks = saved.names.map((n) => SITES.find((s) => s.name === n)).filter(Boolean);
+    if (origin) for (const p of picks) p._min = estMinutes(dist([origin.lat, origin.lon], [p.lat, p.lon]) / 1000);
+    if (picks.length) return { picks, winter: saved.winter };
+  }
+  const fresh = drawPicks(origin);
+  if (saved && saved.week !== week) settings.set('pastPicks', [{ week: saved.week, monday: saved.monday, names: saved.names }, ...settings.get('pastPicks', []).filter((x) => x.week !== saved.week)].slice(0, 4));
+  settings.set('weekPicks', { week, monday: mondayOf().toISOString().slice(0, 10), hasOrigin: !!origin, winter: fresh.winter, names: fresh.picks.map((p) => p.name) });
+  return fresh;
+}
+
+function pastHtml() {
+  const past = settings.get('pastPicks', []).filter((w) => w.names && w.names.length);
+  if (!past.length) return '';
+  const fmt = (iso) => new Date(iso + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
+  return `<section class="past"><h4>Les idées des semaines passées</h4>${past.map((w) => `<p><span>Semaine du ${fmt(w.monday)}</span> ${w.names.map((n) => { const p = SITES.find((s) => s.name === n); return p ? `<button type="button" class="past-l" data-id="${esc(p.id)}">${esc(n)}</button>` : esc(n); }).join(', ')}</p>`).join('')}</section>`;
+}
+
+function drawPicks(origin) {
   const month = new Date().getMonth() + 1;
   const winter = month >= 11 || month <= 4;
   const maxMin = settings.get('search', {}).minutes || 120;
@@ -249,7 +273,7 @@ function tileHtml(p) {
 }
 function picksHtml(picks) {
   if (!picks.length) return '<p class="note">Tu as fait tous les sites proches. Allonge le temps de route dans la recherche du haut.</p>';
-  return `<h3>L'idée de la semaine</h3>${heroHtml(picks[0])}${picks.length > 1 ? `<h3 class="sub-h">Et ${picks.length - 1 === 3 ? 'trois' : picks.length - 1 === 2 ? 'deux' : 'une'} autre${picks.length > 2 ? 's' : ''}</h3><div class="strip">${picks.slice(1).map(tileHtml).join('')}</div>` : ''}`;
+  return `<h3>L'idée de la semaine</h3><p class="note season">${SEASON[new Date().getMonth()]}</p>${heroHtml(picks[0])}${picks.length > 1 ? `<h3 class="sub-h">Et ${picks.length - 1 === 3 ? 'trois' : picks.length - 1 === 2 ? 'deux' : 'une'} autre${picks.length > 2 ? 's' : ''}</h3><div class="strip">${picks.slice(1).map(tileHtml).join('')}</div>` : ''}`;
 }
 function mineHtml() {
   const lines = [];
@@ -269,7 +293,7 @@ export async function renderHome(el) {
   const web = await webIdeas(false);
   const name = settings.get('pseudo', '').trim();
   el.innerHTML = `<div class="home">
-    <header class="hello"><img src="icons/icon-192.png" alt="" width="56" height="56"><h1>Salut${name ? ' ' + esc(name) : ''}</h1><p>${SEASON[new Date().getMonth()]}</p>
+    <header class="hello"><img src="icons/icon-192.png" alt="" width="56" height="56"><h1>Salut${name ? ' ' + esc(name) : ''}</h1><p class="slogan">Le dodo ne vole pas. Il marche. Et toi ?</p>
       <svg class="mts" viewBox="0 0 400 110" preserveAspectRatio="none" aria-hidden="true">
         <path fill="#9fb8a6" d="M0 70 L30 52 L58 62 L92 30 L120 50 L150 38 L178 56 L214 18 L246 46 L270 36 L300 58 L336 24 L368 48 L400 34 V110 H0Z"/>
         <path fill="#2c5a47" d="M0 84 L40 58 L72 72 L112 40 L150 66 L196 34 L236 70 L270 54 L308 78 L348 46 L400 68 V110 H0Z"/>
@@ -281,10 +305,12 @@ export async function renderHome(el) {
     <section class="week" id="hm-picks">${picksHtml(picks)}</section>
     <section class="webs" id="hm-web"${web.length ? '' : ' hidden'}>${webHtml(web)}</section>
     ${mineHtml()}
+    ${pastHtml()}
   </div>`;
   bindFinder();
   if ($('#hm-hist', el)) $('#hm-hist', el).onclick = () => goTab('historique');
   bindPlaces($('#hm-picks', el), picks);
+  el.querySelectorAll('.past-l').forEach((b) => { b.onclick = () => { const p = SITES.find((x) => x.id === b.dataset.id); if (p) openPlace(p); }; });
   // Idées de la semaine rangées sur le téléphone dès l'accueil : randos précalculées si elles existent,
   // sinon calculées en arrière-plan une fois pour toutes. La fiche s'ouvre ensuite sans attente.
   warmPicks(picks);

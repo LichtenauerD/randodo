@@ -490,3 +490,10 @@ ol.grades li span { display: flex; flex-direction: column; } ol.grades small { c
 
 .ideal-line { margin: 2px 0 6px; }
 .start-box { margin: 10px 0; padding: 10px 12px; border-radius: 12px; background: #eef3ef; } .start-box p { margin: 0 0 8px; font-size: .9rem; line-height: 1.4; } .start-box .note { display: block; margin-top: 2px; }
+
+.hello p.slogan { color: var(--sapin); font: 600 1.05rem var(--sign); }
+.week .season { margin: -4px 0 10px; }
+.past { margin: 26px 0 8px; padding-top: 12px; border-top: 1px solid var(--trait); font-size: .8rem; color: var(--gris); }
+.past h4 { margin: 0 0 6px; font: 600 .85rem var(--sign); color: var(--gris); }
+.past p { margin: 0 0 6px; line-height: 1.5; } .past p span { display: block; font-weight: 600; }
+.past-l { border: 0; background: none; padding: 0; color: var(--sapin); text-decoration: underline; text-underline-offset: 2px; font: inherit; }
