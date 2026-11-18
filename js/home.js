@@ -7,6 +7,7 @@ import { prefetchPlace, hikesFor } from './hikes.js';
 import { glyph } from './map.js';
 import { kv, settings, dist, esc, fetchJson, toast, fmtKm, slugOf } from './util.js';
 import { AUDIENCES, idealPlace, idealLabel } from './ideal.js';
+import { walkerSvg } from './grades.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const LVC = { facile: 'var(--facile)', moyenne: 'var(--moyenne)', difficile: 'var(--difficile)' };
@@ -100,6 +101,59 @@ function drawPicks(origin) {
   for (const s of shuffled) { if (out.length >= 4) break; if (types.has(s.type)) continue; types.add(s.type); out.push(s); }
   for (const s of shuffled) { if (out.length >= 4) break; if (!out.includes(s)) out.push(s); }
   return { picks: out, winter };
+}
+
+// Le dodo de l'accueil : il suit le fil violet jusqu'à la balise (une fois par session), puis attend.
+// Un toucher le fait sauter et parler.
+const WALK_SAYS = ['On y va ?', 'Le dodo ne vole pas. Il marche.', 'Une cascade, ça te dit ?', 'Prends de l\'eau !', 'Encore un sommet ?', 'Je connais un coin calme…'];
+function startWalker(hello) {
+  if (!hello) return;
+  const path = hello.querySelector('.walk path');
+  if (!path || !path.getTotalLength) return;
+  const box = document.createElement('button');
+  box.type = 'button';
+  box.className = 'walker';
+  box.setAttribute('aria-label', 'Le dodo de Randodo');
+  box.innerHTML = walkerSvg(56) + '<span class="walker-say" hidden></span>';
+  hello.appendChild(box);
+  const total = path.getTotalLength();
+  let p = 0.03;
+  const place = () => {
+    const pt = path.getPointAtLength(total * p);
+    const m = path.getScreenCTM(), r = hello.getBoundingClientRect();
+    if (!m) return;
+    const sp = new DOMPoint(pt.x, pt.y).matrixTransform(m);
+    box.style.transform = `translate(${(sp.x - r.left - 28).toFixed(1)}px, ${(sp.y - r.top - 51).toFixed(1)}px)`;
+  };
+  const end = 0.9;
+  const still = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let seen = false; try { seen = sessionStorage.getItem('randodo.walked') === '1'; } catch { /* sans stockage */ }
+  if (still || seen) { p = end; place(); box.classList.add('idle'); }
+  else {
+    place();
+    box.classList.add('waiting');
+    setTimeout(() => {
+      box.classList.remove('waiting'); box.classList.add('walking');
+      const t0 = performance.now(), dur = 6500;
+      const step = (t) => {
+        if (!box.isConnected) return;
+        const k = Math.min(1, (t - t0) / dur);
+        p = 0.03 + (end - 0.03) * k;
+        place();
+        if (k < 1) requestAnimationFrame(step);
+        else { box.classList.remove('walking'); box.classList.add('idle', 'arrived'); try { sessionStorage.setItem('randodo.walked', '1'); } catch { /* rien */ } }
+      };
+      requestAnimationFrame(step);
+    }, 1900);
+  }
+  addEventListener('resize', place);
+  const say = box.querySelector('.walker-say');
+  let n = Math.floor(Math.random() * WALK_SAYS.length), tm = 0;
+  box.onclick = () => {
+    box.classList.remove('hop'); void box.offsetWidth; box.classList.add('hop');
+    say.textContent = WALK_SAYS[n++ % WALK_SAYS.length]; say.hidden = false;
+    clearTimeout(tm); tm = setTimeout(() => { say.hidden = true; }, 2600);
+  };
 }
 
 async function warmPicks(picks) {
@@ -314,6 +368,7 @@ export async function renderHome(el) {
   // Idées de la semaine rangées sur le téléphone dès l'accueil : randos précalculées si elles existent,
   // sinon calculées en arrière-plan une fois pour toutes. La fiche s'ouvre ensuite sans attente.
   warmPicks(picks);
+  startWalker($('.hello', el));
   bindWeb(web);
   if (lastSearch) paintResults();
   fetchImages(picks, () => { if (host === el && !el.hidden && $('#hm-picks', el)) { $('#hm-picks', el).innerHTML = picksHtml(picks); bindPlaces($('#hm-picks', el), picks); } });

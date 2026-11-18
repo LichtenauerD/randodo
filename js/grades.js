@@ -103,3 +103,22 @@ export function animateClimber(svg, ms = 4200) {
   else raf = requestAnimationFrame(step);
   return () => cancelAnimationFrame(raf);
 }
+
+// Dodo marcheur de l'accueil, de profil, chapeau de rando sur la tête. Pattes séparées pour l'animation.
+export function walkerSvg(size = 46) {
+  return `<svg class="walker-art" viewBox="0 0 64 64" width="${size}" height="${size}" aria-hidden="true">
+    <g class="w-body">
+      <ellipse cx="30" cy="40" rx="15" ry="13" fill="${C.body}"/>
+      <ellipse cx="33" cy="44" rx="9" ry="8" fill="${C.belly}"/>
+      <path class="w-wing" d="M15 37c-5 1-7 5-5 8 3-2 5-3 7-3z" fill="${C.dark}" opacity=".55"/>
+      <rect x="10" y="33" width="9" height="13" rx="3" fill="#2f6b4f"/>
+      <circle cx="38" cy="25" r="9" fill="${C.body}"/>
+      <path d="M44 22c8 0 12 3 12 7 0 3-3 4-6 3l-6-2z" fill="${C.beak}"/>
+      <path d="M53 29c2 1 3 3 1 4-2 0-3-1-4-2z" fill="${C.beakTip}"/>
+      <g class="w-eye"><circle cx="40" cy="22.5" r="2.1" fill="${C.dark}"/><circle cx="40.7" cy="21.8" r=".7" fill="#fff"/></g>
+      <path d="M28 18c0-6 4-9 10-9s10 3 10 9z" fill="#6b5132"/><path d="M25 18h26" stroke="#4a3822" stroke-width="2.6" stroke-linecap="round"/>
+    </g>
+    <g class="w-leg w-leg-a"><path d="M27 52v6M24 58h6" stroke="${C.dark}" stroke-width="2.2" stroke-linecap="round"/></g>
+    <g class="w-leg w-leg-b"><path d="M34 52v6M31 58h6" stroke="${C.dark}" stroke-width="2.2" stroke-linecap="round"/></g>
+  </svg>`;
+}

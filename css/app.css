@@ -497,3 +497,26 @@ ol.grades li span { display: flex; flex-direction: column; } ol.grades small { c
 .past h4 { margin: 0 0 6px; font: 600 .85rem var(--sign); color: var(--gris); }
 .past p { margin: 0 0 6px; line-height: 1.5; } .past p span { display: block; font-weight: 600; }
 .past-l { border: 0; background: none; padding: 0; color: var(--sapin); text-decoration: underline; text-underline-offset: 2px; font: inherit; }
+
+/* Dodo marcheur de l'accueil */
+.walker { position: absolute; left: 0; top: 0; z-index: 2; width: 56px; height: 56px; padding: 0; border: 0; background: none; cursor: pointer; will-change: transform; }
+.walker .walker-art { display: block; overflow: visible; }
+.walker.waiting { opacity: 0; }
+.walker .w-body, .walker .w-leg { transform-box: fill-box; }
+.walker .w-body { transform-origin: 50% 100%; }
+.walker .w-leg { transform-origin: 50% 0; }
+.walker.walking .w-body { animation: waddle .42s ease-in-out infinite alternate; }
+.walker.walking .w-leg-a { animation: stride .42s ease-in-out infinite alternate; }
+.walker.walking .w-leg-b { animation: stride .42s ease-in-out infinite alternate-reverse; }
+.walker.walking .w-wing { animation: flap .21s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: 80% 20%; }
+.walker.idle .w-eye { animation: blink 4s infinite; transform-box: fill-box; transform-origin: center; }
+.walker.arrived .walker-art { animation: arrive .5s ease-out; }
+.walker.hop .walker-art { animation: hop .55s cubic-bezier(.3,1.6,.5,1); }
+.walker-say { position: absolute; right: 36px; bottom: 52px; white-space: nowrap; padding: 6px 10px; border-radius: 12px 12px 2px 12px; background: #fff; color: var(--sapin); font: 600 .82rem var(--sign); box-shadow: 0 4px 14px rgba(20,33,27,.18); animation: fadein .2s; }
+@keyframes waddle { from { transform: rotate(-6deg) translateY(0); } to { transform: rotate(6deg) translateY(-2px); } }
+@keyframes stride { from { transform: rotate(-22deg); } to { transform: rotate(22deg); } }
+@keyframes flap { to { transform: rotate(-18deg); } }
+@keyframes blink { 0%, 92%, 100% { transform: scaleY(1); } 95% { transform: scaleY(.1); } }
+@keyframes arrive { 0% { transform: translateY(0); } 40% { transform: translateY(-9px); } 100% { transform: translateY(0); } }
+@keyframes hop { 0% { transform: translateY(0) rotate(0); } 45% { transform: translateY(-16px) rotate(-8deg); } 100% { transform: translateY(0) rotate(0); } }
+@media (prefers-reduced-motion: reduce) { .walker .w-body, .walker .w-leg, .walker-art { animation: none !important; } }
