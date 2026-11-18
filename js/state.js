@@ -1,5 +1,5 @@
 // État partagé : envie du jour, historique, liste d'envies, traces enregistrées.
-import { kv, settings, dist, norm, uid } from './util.js';
+import { kv, settings, dist, norm, uid, slugOf } from './util.js';
 
 const listeners = {};
 export const bus = {
@@ -23,10 +23,11 @@ export function fits(h) {
 }
 
 export const store = {
-  log: [], wish: [], hikes: [], ready: false,
+  log: [], wish: [], hikes: [], visited: {}, ready: false,
   async load() {
     this.log = (await kv.get('log')) || [];
     this.wish = (await kv.get('wish')) || [];
+    this.visited = (await kv.get('visited')) || {};
     const keys = await kv.keys('hike:');
     this.hikes = (await Promise.all(keys.map((k) => kv.get(k)))).filter(Boolean).sort((a, b) => (b.savedAt || 0) - (a.savedAt || 0));
     this.ready = true;
@@ -35,7 +36,15 @@ export const store = {
     const n = norm(place.name);
     return this.log.find((e) => e.placeId === place.id || (e.lat != null && dist([e.lat, e.lon], [place.lat, place.lon]) < 350 && norm(e.placeName) === n));
   },
-  isDone(place) { return !!this.doneEntry(place); },
+  // Un lieu est fait s'il est coché (« j'y suis allé ») ou s'il a une sortie dans l'historique.
+  isVisited(place) { return !!this.visited[slugOf(place.name)]; },
+  isDone(place) { return this.isVisited(place) || !!this.doneEntry(place); },
+  async setVisited(place, on, date) {
+    const k = slugOf(place.name);
+    if (on) this.visited[k] = date || new Date().toISOString().slice(0, 10); else delete this.visited[k];
+    await kv.set('visited', this.visited);
+    bus.emit('log');
+  },
   isWished(place) { return this.wish.some((w) => w.id === place.id); },
   async toggleWish(place) {
     if (this.isWished(place)) this.wish = this.wish.filter((w) => w.id !== place.id);
@@ -73,7 +82,7 @@ export const store = {
   isSaved(id) { return this.hikes.some((x) => x.id === id); },
   // Sauvegarde complète, pour changer de téléphone ou garder une copie.
   async exportAll() {
-    return JSON.stringify({ app: 'randodo', version: 1, date: new Date().toISOString(), log: this.log, wish: this.wish, hikes: this.hikes, want, pseudo: settings.get('pseudo', '') });
+    return JSON.stringify({ app: 'randodo', version: 1, date: new Date().toISOString(), log: this.log, wish: this.wish, visited: this.visited, hikes: this.hikes, want, pseudo: settings.get('pseudo', '') });
   },
   async importAll(text) {
     const d = JSON.parse(text);
@@ -83,7 +92,8 @@ export const store = {
     this.log.sort((a, b) => (a.date < b.date ? 1 : -1));
     const w = new Set(this.wish.map((x) => x.id));
     for (const x of d.wish || []) if (!w.has(x.id)) this.wish.push(x);
-    await kv.set('log', this.log); await kv.set('wish', this.wish);
+    this.visited = { ...(d.visited || {}), ...this.visited };
+    await kv.set('log', this.log); await kv.set('wish', this.wish); await kv.set('visited', this.visited);
     for (const h of d.hikes || []) if (!this.isSaved(h.id)) await this.saveHike(h);
     bus.emit('log'); bus.emit('wish');
     return { log: (d.log || []).length, hikes: (d.hikes || []).length };

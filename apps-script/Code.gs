@@ -55,13 +55,16 @@ function membres_(classeur) {
   let f = classeur.getSheetByName('Membres');
   if (!f) {
     f = classeur.insertSheet('Membres');
-    f.appendRow(['who', 'owner', 'since', 'seen']);
+    f.appendRow(['who', 'owner', 'since', 'seen', 'grade', 'lieux', 'faits']);
     f.setFrozenRows(1);
-    f.getRange('A:D').setNumberFormat('@');
+    f.getRange('A:G').setNumberFormat('@');
+  } else if (f.getLastColumn() < 7) {
+    // Feuille d'avant la 1.6 : on ajoute les colonnes de progression.
+    f.getRange(1, 5, 1, 3).setValues([['grade', 'lieux', 'faits']]);
   }
   const lignes = f.getDataRange().getValues();
   const liste = [];
-  for (let i = 1; i < lignes.length; i++) if (lignes[i][0]) liste.push({ who: String(lignes[i][0]), since: String(lignes[i][2]).slice(0, 10) });
+  for (let i = 1; i < lignes.length; i++) if (lignes[i][0]) liste.push({ who: String(lignes[i][0]), since: String(lignes[i][2]).slice(0, 10), grade: String(lignes[i][4] || ''), lieux: Number(lignes[i][5]) || 0, faits: String(lignes[i][6] || '') });
   return { feuille: f, lignes: lignes, liste: liste };
 }
 function inscrire_(classeur, owner, who) {
@@ -124,6 +127,17 @@ function doPost(e) {
     const colId = COLONNES.indexOf('id'), colOwner = COLONNES.indexOf('owner');
     const owner = texte_(d.owner, 60);
     if (!owner) return reponse_({ ok: false, error: 'appareil non identifié' });
+    if (d.action === 'progress') {
+      // Progression d'un membre : grade, nombre de lieux faits, liste des lieux (identifiants courts).
+      const m = membres_(classeur_());
+      for (let i = 1; i < m.lignes.length; i++) {
+        if (String(m.lignes[i][1]) === owner) {
+          m.feuille.getRange(i + 1, 4, 1, 4).setValues([[new Date().toISOString(), texte_(d.grade, 40), String(nombre_(d.lieux) || 0), texte_(d.faits, 45000)]]);
+          return reponse_({ ok: true });
+        }
+      }
+      return reponse_({ ok: false, error: 'membre inconnu : rouvre l\'appli pour t\'inscrire' });
+    }
     if (d.action === 'join') {
       const prenom = texte_(d.who, 24);
       if (!prenom) return reponse_({ ok: false, error: 'prénom manquant' });

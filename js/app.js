@@ -88,6 +88,7 @@ async function boot() {
   document.querySelectorAll('#tabs button').forEach((b) => { b.onclick = () => go(b.dataset.tab); });
   $('#btn-filter').onclick = openWant;
   bus.on('want', updateWant);
+  bus.on('openPlace', (p) => { if (!p) return; go('carte'); openPlace(p, { focus: true }); });
   updateWant();
   bus.on('maphint', (h) => setStatus(h, /indisponible/.test(h)));
   bus.on('sheet', (open) => { if (open) $('#results').hidden = true; });

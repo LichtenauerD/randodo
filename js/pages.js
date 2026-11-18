@@ -2,12 +2,16 @@
 import { CONFIG, TYPES, VERSION } from './config.js';
 import { store, want, saveWant, wantActive, DEFAULT_WISH, bus } from './state.js';
 import { openHike, openPlace, frDate } from './sheet.js';
+import { renderObjectifs } from './objectifs.js';
+import { needsOnboarding, openOnboarding } from './onboard.js';
+import { gradeOf, dodoSvg } from './grades.js';
 import { startGuide } from './guide.js';
 import { fromGpx } from './hikes.js';
 import { parseGpx, shareGpx } from './gpx.js';
 import { overpassState } from './overpass.js';
 import { renderHome, setHomeNavigator } from './home.js';
-import { kv, settings, esc, fmtKm, fmtDur, toast, uid, fetchJson } from './util.js';
+import { kv, settings, esc, fmtKm, fmtDur, toast, uid, fetchJson, slugOf } from './util.js';
+import { SITES } from './places.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const page = () => document.getElementById('page');
@@ -113,7 +117,7 @@ export function openLogForm({ place, hike, walked, walkedMinutes, onSaved, entry
 
 // ---------- Premier lancement : prénom, puis inscription dans la feuille du groupe ----------
 export function askName() {
-  if (settings.get('pseudo', '').trim()) { register(); return; }
+  if (settings.get('pseudo', '').trim()) { register(); if (needsOnboarding()) openOnboarding(() => { if (tab === 'accueil') render(); }); return; }
   const box = openModal(`<div class="welcome"><img src="icons/icon-192.png" alt="" width="84" height="84"><h2>Bienvenue sur Randodo</h2><p class="motto">Le dodo ne vole pas. Il marche. Et toi ?</p>
     <p>C'est quoi ton prénom ? Il sert à signer tes randos quand tu les partages avec les autres.</p>
     <label class="field"><input type="text" id="wn-name" placeholder="Ton prénom" maxlength="24" autocomplete="given-name" autocapitalize="words"></label>
@@ -126,6 +130,7 @@ export function askName() {
     closeModal();
     register();
     if (tab === 'accueil') render();
+    if (needsOnboarding()) openOnboarding(() => { if (tab === 'accueil' || tab === 'objectifs') render(); });
   };
   $('#wn-ok', box).onclick = ok;
   $('#wn-name', box).onkeydown = (e) => { if (e.key === 'Enter') ok(); };
@@ -150,6 +155,23 @@ async function post(payload) {
   if (!j.ok) throw new Error(j.error || 'refus du serveur');
   return j;
 }
+// Progression envoyée au groupe (grade, nombre de lieux, lieux faits), au plus une fois toutes les 20 secondes.
+let progressTimer = null;
+export function pushProgress() {
+  if (!communityUrl() || !settings.get('pseudo', '').trim()) return;
+  clearTimeout(progressTimer);
+  progressTimer = setTimeout(async () => {
+    const done = SITES.filter((p) => store.isDone(p));
+    const sig = done.length + ':' + done.map((p) => p.id).join(',');
+    if (settings.get('progressSent', '') === sig) return;
+    try {
+      await post({ action: 'progress', owner: deviceKey(), grade: gradeOf(done.length).name, lieux: done.length, faits: done.map((p) => slugOf(p.name)).join(',') });
+      settings.set('progressSent', sig);
+    } catch { /* nouvel essai au prochain changement */ }
+  }, 20000);
+}
+bus.on('log', pushProgress);
+
 export async function pushCommunity(e) {
   const who = settings.get('pseudo', '').trim();
   if (!communityUrl()) return;
@@ -185,6 +207,7 @@ export function showTab(t) {
 }
 function render() {
   if (tab === 'accueil') renderHome(page());
+  else if (tab === 'objectifs') renderObjectifs(page());
   else if (tab === 'traces') renderTraces();
   else if (tab === 'historique') renderHistory();
   else if (tab === 'reglages') renderSettings();
@@ -291,7 +314,8 @@ async function renderCommunity(body) {
     const people = [...new Set(entries.map((e) => e.who).filter(Boolean))].sort();
     const names = [...new Set(members.map((m) => m.who).filter(Boolean))];
     const list = whoFilter ? entries.filter((e) => e.who === whoFilter) : entries;
-    body.innerHTML = `${stale ? `<p class="note" style="margin-bottom:10px">${esc(stale)}</p>` : ''}${names.length ? `<p class="note" style="margin-bottom:10px">Dans le groupe : ${esc(names.join(', '))}.</p>` : ''}
+    const crew = members.filter((m) => m.who).sort((a, b) => (b.lieux || 0) - (a.lieux || 0) || a.who.localeCompare(b.who));
+    body.innerHTML = `${stale ? `<p class="note" style="margin-bottom:10px">${esc(stale)}</p>` : ''}${crew.length ? `<div class="crew">${crew.map((m) => { const g = gradeOf(m.lieux || 0); return `<div class="mate">${dodoSvg(g.dodo, 42)}<span><b>${esc(m.who)}</b><small>${esc(m.grade || g.name)} · ${m.lieux || 0} lieu${(m.lieux || 0) > 1 ? 'x' : ''}</small></span></div>`; }).join('')}</div>` : ''}
       <div class="checks" style="margin-bottom:12px"><button type="button" class="chip${whoFilter ? '' : ' on'}" data-w="">Tout le monde</button>${people.map((w) => `<button type="button" class="chip${whoFilter === w ? ' on' : ''}" data-w="${esc(w)}">${esc(w)}</button>`).join('')}</div>
       ${list.map((e, i) => `<div class="card" data-i="${i}"><h3>${lvDot(e.level)}${esc(e.placeName)}</h3>
         <p class="meta"><span class="who">${esc(e.who || '?')}</span>${frDate(e.date)}${e.rating ? ', note ' + e.rating + '/5' : ''}</p>${numsLine(e)}${e.note ? `<p style="margin-top:6px;font-size:.92rem">${esc(e.note)}</p>` : ''}
