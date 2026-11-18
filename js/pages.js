@@ -128,9 +128,11 @@ export function askName() {
     <label class="field"><input type="text" id="wn-name" placeholder="Ton prénom" maxlength="24" autocomplete="given-name" autocapitalize="words"></label>
     <button type="button" class="btn main" id="wn-ok" style="width:100%;margin-top:14px">C'est parti</button></div>`);
   document.getElementById('modal').onclick = null; // on ne ferme pas cette fenêtre en touchant à côté
-  const ok = () => {
-    const name = $('#wn-name', box).value.trim();
-    if (name.length < 2) { toast('Écris ton prénom pour continuer.'); return; }
+  $('#wn-name', box).oninput = (e) => markField(e.target, '');
+  const ok = async () => {
+    const input = $('#wn-name', box), name = input.value.trim();
+    if (name.length < 2) { markField(input, 'Écris ton prénom pour continuer.'); return; }
+    if (await nameTaken(name)) { markField(input, TAKEN); return; }
     settings.set('pseudo', name);
     closeModal();
     register();
@@ -142,6 +144,47 @@ export function askName() {
   $('#wn-name', box).onkeydown = (e) => { if (e.key === 'Enter') ok(); };
   setTimeout(() => $('#wn-name', box).focus(), 100);
 }
+// ---------- Prénoms uniques dans la communauté ----------
+const normName = (n) => String(n || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ');
+// Vrai si un autre membre porte déjà ce prénom. En cas de réseau absent, on laisse passer (le script vérifie aussi).
+export async function nameTaken(name) {
+  const url = groupAddress();
+  if (!url || !normName(name)) return false;
+  try {
+    const j = await fetchJson(url + (url.includes('?') ? '&' : '?') + 'action=list', { redirect: 'follow' }, 10000);
+    const me = await myPid();
+    return (j.members || []).some((m) => normName(m.who) === normName(name) && (!me || m.pid !== me));
+  } catch { return false; }
+}
+const TAKEN = 'Nom déjà pris, veuillez en choisir un autre.';
+function markField(input, msg) {
+  input.classList.toggle('bad', !!msg);
+  let hint = input.parentElement.querySelector('.field-err');
+  if (!hint) { hint = document.createElement('small'); hint.className = 'field-err'; input.insertAdjacentElement('afterend', hint); }
+  hint.textContent = msg || '';
+  hint.hidden = !msg;
+}
+// Demande un autre prénom quand celui-ci est pris (au moment de rejoindre la communauté).
+function askOtherName() {
+  return new Promise((resolve) => {
+    const box = openModal(`<h2>Ce prénom est déjà pris</h2><p class="meta">Un autre membre de la communauté s'appelle déjà ${esc(settings.get('pseudo', ''))}. Choisis un prénom ou un surnom différent, par exemple avec l'initiale de ton nom.</p>
+      <label class="field"><input type="text" id="on-name" maxlength="24" value="${esc(settings.get('pseudo', ''))}" autocapitalize="words"></label>
+      <div class="foot"><button type="button" class="btn" id="on-no">Annuler</button><button type="button" class="btn main" id="on-ok">Valider</button></div>`);
+    document.getElementById('modal').classList.add('over');
+    const input = $('#on-name', box);
+    markField(input, TAKEN);
+    input.oninput = () => markField(input, '');
+    const done = (v) => { document.getElementById('modal').classList.remove('over'); closeModal(); resolve(v); };
+    $('#on-no', box).onclick = () => done(null);
+    $('#on-ok', box).onclick = async () => {
+      const n = input.value.trim();
+      if (n.length < 2) { markField(input, 'Écris au moins deux lettres.'); return; }
+      if (await nameTaken(n)) { markField(input, TAKEN); return; }
+      settings.set('pseudo', n); done(n);
+    };
+  });
+}
+
 // Inscrit ce téléphone dans l'onglet « Membres » de la feuille du groupe (une fois par prénom et par adresse).
 export async function register(strict) {
   const who = settings.get('pseudo', '').trim(), url = communityUrl();
@@ -185,6 +228,7 @@ export function pushProgress(now) {
 export async function joinCommunity() {
   if (!groupAddress()) { toast('La communauté n\'est pas reliée sur cette version.'); return false; }
   if (!settings.get('pseudo', '').trim()) { toast('Indique d\'abord ton prénom dans Réglages.'); return false; }
+  if (await nameTaken(settings.get('pseudo', '')) && !(await askOtherName())) { toast('Tu restes en solo pour l\'instant.'); if (!communityChoice()) settings.set('community', 'non'); return false; }
   settings.set('community', 'oui');
   settings.set('joined', ''); settings.set('progressSent', '');
   pingUsage(true);
@@ -535,7 +579,13 @@ function renderSettings() {
   $('#s-tuto', p).onclick = () => startTour();
   if ($('#s-join', p)) $('#s-join', p).onclick = () => joinCommunity();
   if ($('#s-leave', p)) $('#s-leave', p).onclick = () => { if (confirm('Quitter la communauté ? Tes randos partagées et ta progression seront retirées du groupe. Rien n\'est effacé sur ton téléphone.')) leaveCommunity(); };
-  $('#s-pseudo', p).onchange = (e) => { settings.set('pseudo', e.target.value.trim()); register(); };
+  $('#s-pseudo', p).oninput = (e) => markField(e.target, '');
+  $('#s-pseudo', p).onchange = async (e) => {
+    const n = e.target.value.trim();
+    if (n.length < 2) { markField(e.target, 'Écris au moins deux lettres.'); return; }
+    if (communityChoice() === 'oui' && await nameTaken(n)) { markField(e.target, TAKEN); return; }
+    settings.set('pseudo', n); settings.set('joined', ''); register(); toast('Prénom enregistré.');
+  };
   $('#s-url', p).onchange = (e) => { settings.set('communityUrl', e.target.value.trim()); register(); };
   $('#s-ign', p).onchange = (e) => { settings.set('ignScanKey', e.target.value.trim()); toast(e.target.value.trim() ? 'Clé enregistrée : le fond « IGN 1:25 000 » est disponible sur la carte.' : 'Clé retirée.'); };
   $('#s-direct', p).onchange = (e) => settings.set('directLinks', e.target.checked);

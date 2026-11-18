@@ -659,3 +659,6 @@ details.adv { margin-top: 10px; } details.adv summary { color: var(--gris); font
 .pf-pill { font-size: .84rem; padding: 4px 9px; border-radius: 10px; background: #fff; border: 1px solid color-mix(in srgb, var(--c, #888) 22%, white); }
 .pf-pill.common { background: #dcefdc; border-color: #8cc596; color: #23602c; font-weight: 600; }
 .pf-legend { font-size: .85rem; color: var(--gris); margin: -2px 0 8px; }
+.field input.bad { border-color: #c23a2b !important; background: #fdf0ee !important; }
+.field-err { display: block; color: #c23a2b; font-size: .85rem; font-weight: 600; margin-top: 5px; }
+#modal.over { z-index: 2100; }

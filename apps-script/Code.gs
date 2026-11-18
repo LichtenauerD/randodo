@@ -71,8 +71,11 @@ function membres_(classeur) {
   for (let i = 1; i < lignes.length; i++) if (lignes[i][0]) liste.push({ pid: pid_(String(lignes[i][1])), who: String(lignes[i][0]), since: String(lignes[i][2]).slice(0, 10), grade: String(lignes[i][4] || ''), lieux: Number(lignes[i][5]) || 0, faits: String(lignes[i][6] || '') });
   return { feuille: f, lignes: lignes, liste: liste };
 }
+const norm_ = function (n) { return String(n || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' '); };
 function inscrire_(classeur, owner, who) {
   const m = membres_(classeur);
+  // Un prénom ne peut être porté que par un seul membre.
+  for (let i = 1; i < m.lignes.length; i++) if (String(m.lignes[i][1]) !== owner && norm_(m.lignes[i][0]) === norm_(who)) return 'pris';
   const maintenant = new Date().toISOString();
   for (let i = 1; i < m.lignes.length; i++) {
     if (String(m.lignes[i][1]) === owner) {
@@ -199,7 +202,7 @@ function doPost(e) {
     if (d.action === 'join') {
       const prenom = texte_(d.who, 24);
       if (!prenom) return reponse_({ ok: false, error: 'prénom manquant' });
-      inscrire_(classeur_(), owner, prenom);
+      if (inscrire_(classeur_(), owner, prenom) === 'pris') return reponse_({ ok: false, error: 'Nom déjà pris, veuillez en choisir un autre.' });
       return reponse_({ ok: true });
     }
     const id = texte_(d.action === 'add' ? d.entry && d.entry.id : d.id, 40);
