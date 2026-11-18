@@ -192,7 +192,7 @@ async function webIdeas(refresh) {
     return items;
   } catch { return cached ? cached.items : []; }
 }
-const communityUrl = () => (settings.get('communityUrl', '') || CONFIG.communityUrl || '').trim();
+const communityUrl = () => (settings.get('communityUrl', '') || (CONFIG.mock ? '' : CONFIG.communityUrl) || '').trim();
 const safeUrl = (u) => (/^https?:\/\//i.test(u || '') ? u : '');
 
 function webHtml(items) {

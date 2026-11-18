@@ -4,7 +4,7 @@ const params = new URLSearchParams(location.search);
 // Mode test : ?mock=http://localhost:8765 remplace tous les services par un serveur local.
 const MOCK = params.get('mock') || '';
 
-export const VERSION = '1.7.6';
+export const VERSION = '1.7.7';
 
 export const CONFIG = {
   mock: MOCK,
@@ -66,7 +66,7 @@ export const CONFIG = {
 
   // Adresse du groupe pour les randos communautaires (script Google, voir LISEZMOI).
   // Laisse vide pour la saisir dans Réglages ; remplis-la ici pour que tes proches l'aient d'office.
-  communityUrl: '',
+  communityUrl: 'https://script.google.com/macros/s/AKfycbzgXMrBThk3Be44ghM4cVm7zIMQ46oITVrC1TokuCUJFG1LuDqefuq27Ieu61rVTqIs/exec',
 
   // Liens vers les plateformes. {q} = nom du lieu, {lat} {lon} = coordonnées, {s} {w} {n} {e} = cadre autour du lieu.
   // Les deux premiers sont des liens directs à confirmer en conditions réelles ; « web » est une recherche qui marche toujours.

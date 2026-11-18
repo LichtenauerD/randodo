@@ -1,4 +1,8 @@
 /**
+ * @OnlyCurrentDoc
+ * Accès limité à cette seule feuille : le script ne peut ni lire ni modifier tes autres fichiers.
+ */
+/**
  * Randodo : carnet commun des randonnées du groupe.
  * À coller dans Extensions > Apps Script d'une feuille Google, puis à déployer en application web
  * (Exécuter en tant que : moi ; Accès : tout le monde). L'adresse obtenue, qui finit par /exec,

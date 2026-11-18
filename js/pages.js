@@ -150,7 +150,7 @@ export async function register() {
 }
 
 // ---------- Communauté ----------
-export const communityUrl = () => (settings.get('communityUrl', '') || CONFIG.communityUrl || (CONFIG.mock ? '' : '')).trim();
+export const communityUrl = () => (settings.get('communityUrl', '') || (CONFIG.mock ? '' : CONFIG.communityUrl) || '').trim();
 const deviceKey = () => { let k = settings.get('deviceKey', ''); if (!k) { k = uid() + uid(); settings.set('deviceKey', k); } return k; };
 async function post(payload) {
   const res = await fetch(communityUrl(), { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload), redirect: 'follow' });
