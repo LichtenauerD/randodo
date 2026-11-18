@@ -343,6 +343,9 @@ function renderSettings() {
   p.innerHTML = `<h2>Réglages</h2>
     <div class="card"><h3>Visite guidée</h3><p class="meta">Le petit tour de l'appli du premier lancement, avec Didou le dodo.</p>
       <div class="row"><button type="button" class="btn small main" id="s-tuto">Rejouer le tutoriel</button></div></div>
+    <div class="card"><h3>Un souci, une idée ?</h3><p class="meta">Un bug, un lieu à ajouter, une remarque : ton message arrive directement à Dorian.</p>
+      <label class="field"><textarea id="s-fb" rows="3" maxlength="2000" placeholder="Ce qui ne marche pas, ou ce qui manque"></textarea></label>
+      <div class="row"><button type="button" class="btn small main" id="s-fb-send">Envoyer</button></div></div>
     <div class="card"><h3>Faire découvrir Randodo</h3><p class="meta">Envoie le lien de l'appli à tes amis.</p>
       <div class="row"><button type="button" class="btn small main" id="s-share">Partager Randodo</button></div></div>
     <div class="card"><h3>Groupe</h3><p class="meta">Pour voir les randos de tes amis dans l'onglet « Communauté ». L'adresse du groupe vient du script Google (voir le mode d'emploi) ; tant qu'elle est vide, tout le reste de l'appli fonctionne.</p>
@@ -362,6 +365,14 @@ function renderSettings() {
       <p class="meta" style="margin-top:8px">Randodo ${VERSION}</p></div>
     <p class="signature">Le dodo ne vole pas. Il marche. Et toi ?<br>Par Dorian Lichtenauer</p>`;
   $('#s-share', p).onclick = () => shareApp();
+  $('#s-fb-send', p).onclick = async () => {
+    const t = $('#s-fb', p).value.trim();
+    if (t.length < 3) { toast('Écris quelques mots d\'abord.'); return; }
+    const info = { message: t, who: settings.get('pseudo', ''), version: VERSION, screen: 'réglages', device: navigator.userAgent.slice(0, 200) };
+    if (!communityUrl()) { location.href = 'mailto:?subject=' + encodeURIComponent('Randodo ' + VERSION) + '&body=' + encodeURIComponent(t); return; }
+    try { await post({ action: 'feedback', owner: deviceKey(), ...info }); $('#s-fb', p).value = ''; toast('Merci ! Message bien envoyé.'); }
+    catch (err) { toast('Envoi impossible : ' + err.message, 5000); }
+  };
   $('#s-tuto', p).onclick = () => startTour();
   $('#s-pseudo', p).onchange = (e) => { settings.set('pseudo', e.target.value.trim()); register(); };
   $('#s-url', p).onchange = (e) => { settings.set('communityUrl', e.target.value.trim()); register(); };

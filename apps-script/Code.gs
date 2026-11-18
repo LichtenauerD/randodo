@@ -138,6 +138,16 @@ function doPost(e) {
       }
       return reponse_({ ok: false, error: 'membre inconnu : rouvre l\'appli pour t\'inscrire' });
     }
+    if (d.action === 'feedback') {
+      // Retours de la phase de test : onglet « Retours », une ligne par message.
+      const c = classeur_();
+      let r = c.getSheetByName('Retours');
+      if (!r) { r = c.insertSheet('Retours'); r.appendRow(['date', 'who', 'version', 'ecran', 'message', 'appareil']); r.setFrozenRows(1); r.getRange('A:F').setNumberFormat('@'); }
+      const msg = texte_(d.message, 2000);
+      if (!msg) return reponse_({ ok: false, error: 'message vide' });
+      r.appendRow([new Date().toISOString(), texte_(d.who, 24), texte_(d.version, 12), texte_(d.screen, 80), msg, texte_(d.device, 200)]);
+      return reponse_({ ok: true });
+    }
     if (d.action === 'join') {
       const prenom = texte_(d.who, 24);
       if (!prenom) return reponse_({ ok: false, error: 'prénom manquant' });
