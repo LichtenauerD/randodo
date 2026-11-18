@@ -10,6 +10,8 @@ export const GLYPH = {
   vue: '<path d="M2 12s4-6 10-6 10 6 10 6-4 6-10 6S2 12 2 12z"/><circle cx="12" cy="12" r="2.5"/>',
   lac: '<path d="M3 9c2-2 4-2 6 0s4 2 6 0 4-2 6 0M3 15c2-2 4-2 6 0s4 2 6 0 4-2 6 0"/>',
   // Deux parois, trois filets d'eau qui tombent, et le remous en bas.
+  // Touffes d'herbe et miroir d'eau : tourbières et vallons.
+  tourbiere: '<path d="M3 20h18"/><path d="M7 17c0-3-1.5-5-3-6M7 17c0-3 1.5-5 3-6M7 17V9"/><path d="M16 17c0-2.5-1-4-2.5-5M16 17c0-2.5 1-4 2.5-5M16 17v-6"/>',
   cascade: '<path d="M4 3v15M20 3v15"/><path d="M9 3v11M12 3v13M15 3v11"/><path d="M6 20c2-1.6 4-1.6 6 0s4 1.6 6 0"/>',
   rocher: '<path d="M4 19l3-9 5-4 6 5 2 8z"/>',
   chateau: '<path d="M4 20V8h3V5h3v3h4V5h3v3h3v12zM10 20v-5h4v5"/>',

@@ -23,7 +23,7 @@ export function classify(t) {
   return 'lieu';
 }
 
-const WEIGHT = { cascade: 12, lac: 10, chateau: 9, grotte: 7, gorge: 9, vue: 6, sommet: 5, rocher: 4, refuge: 2, lieu: 1 };
+const WEIGHT = { cascade: 12, lac: 10, tourbiere: 6, chateau: 9, grotte: 7, gorge: 9, vue: 6, sommet: 5, rocher: 4, refuge: 2, lieu: 1 };
 
 function toPlace(el) {
   const t = el.tags || {};

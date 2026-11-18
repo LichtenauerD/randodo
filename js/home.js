@@ -1,6 +1,6 @@
 // Accueil : suggestions de la semaine, idées repérées sur le web, recherche guidée par temps de route.
 import { CONFIG, TYPES } from './config.js';
-import { SITES, notablePlaces, imageOf, fetchImages, searchRemote } from './places.js';
+import { SITES, imageOf, fetchImages, searchRemote } from './places.js';
 import { store, want, saveWant } from './state.js';
 import { openPlace } from './sheet.js';
 import { glyph } from './map.js';
@@ -17,7 +17,7 @@ export const GROUPS = [
   { id: 'vue', short: 'Sommets', phrase: 'des sommets et des points de vue', label: 'Sommets et points de vue', types: ['sommet', 'vue'], icon: 'sommet' },
   { id: 'ruine', short: 'Châteaux', phrase: 'des châteaux et des ruines', label: 'Châteaux et ruines', types: ['chateau'], icon: 'chateau' },
   { id: 'roche', short: 'Grottes & Rochers', phrase: 'des grottes et des rochers', label: 'Grottes et rochers', types: ['rocher', 'grotte'], icon: 'rocher' },
-  { id: 'abri', short: 'Refuges', phrase: 'des refuges isolés', label: 'Refuges et bâtiments isolés', types: ['refuge'], icon: 'refuge' },
+  { id: 'nature', short: 'Tourbières & vallons', phrase: 'des tourbières et des vallons', label: 'Tourbières et vallons', types: ['tourbiere'], icon: 'tourbiere' },
 ];
 const DURATIONS = [[30, '30 min'], [60, '1 h'], [90, '1 h 30'], [120, '2 h'], [180, '3 h']];
 // Sites d'altitude, écartés des suggestions de novembre à avril.
@@ -326,17 +326,11 @@ export async function runSearch(q, origin) {
   const near = (p) => { const km = dist([origin.lat, origin.lon], [p.lat, p.lon]) / 1000; return km <= kmMax ? km : null; };
   let cands = [];
   for (const s of SITES) { if (types.length && !types.includes(s.type)) continue; const km = near(s); if (km !== null) cands.push(Object.assign(s, { _min: estMinutes(km), _approx: true })); }
-  let note = '';
-  if (q.minutes <= 90) {
-    try {
-      const extra = await notablePlaces(origin.lat, origin.lon, kmMax * 1000, types);
-      if (my !== runId) return;
-      for (const p of extra) { const km = near(p); if (km !== null) cands.push(Object.assign(p, { _min: estMinutes(km), _approx: true })); }
-    } catch { note = 'Lieux détaillés indisponibles pour l\'instant : seuls les sites de la sélection sont proposés.'; }
-  } else {
-    note = 'Au-delà de 1 h 30 de route, la recherche se limite aux sites de la sélection.';
-  }
-  if (want.hideDone) cands = cands.filter((p) => !store.isDone(p));
+  // Seuls les lieux de la sélection sont proposés : ce sont de vraies destinations de rando (pas un château en ville).
+  const note = '';
+  // Lieux déjà faits : écartés, sauf s'il n'y a plus rien à proposer.
+  const fresh = cands.filter((p) => !store.isDone(p));
+  if (fresh.length >= 3 || want.hideDone) cands = fresh;
   // Temps de route réels pour les 90 candidats les mieux placés.
   cands.sort((a, b) => (b.curated ? 40 : 0) + b.score - b._min / 4 - ((a.curated ? 40 : 0) + a.score - a._min / 4));
   const top = cands.slice(0, 90);
