@@ -91,6 +91,21 @@ function pid_(owner) {
   return h.slice(0, 6).map(function (b) { return ('0' + (b & 255).toString(16)).slice(-2); }).join('');
 }
 
+// Compteur anonyme d'utilisateurs : un identifiant tiré au hasard (sans lien avec le prénom ni l'appareil),
+// et le fait d'être ou non dans la communauté. Les lignes non revues depuis 6 mois sont effacées.
+function utilisateurs_(classeur) {
+  let f = classeur.getSheetByName('Utilisateurs');
+  if (!f) { f = classeur.insertSheet('Utilisateurs'); f.appendRow(['anon', 'solo', 'seen']); f.setFrozenRows(1); f.getRange('A:C').setNumberFormat('@'); }
+  return f;
+}
+function soloCount_(classeur) {
+  const f = utilisateurs_(classeur), lignes = f.getDataRange().getValues();
+  const limite = new Date(Date.now() - 183 * 864e5).toISOString();
+  let n = 0;
+  for (let i = 1; i < lignes.length; i++) if (String(lignes[i][1]) === 'oui' && String(lignes[i][2]) >= limite) n++;
+  return n;
+}
+
 function reponse_(objet) {
   return ContentService.createTextOutput(JSON.stringify(objet)).setMimeType(ContentService.MimeType.JSON);
 }
@@ -123,7 +138,7 @@ function doGet() {
       e.pid = pid_(String(lignes[i][COLONNES.indexOf('owner')]));
       if (e.id) entries.push(e);
     }
-    return reponse_({ ok: true, entries: entries, suggestions: suggestions_(classeur_()), members: membres_(classeur_()).liste });
+    return reponse_({ ok: true, entries: entries, suggestions: suggestions_(classeur_()), members: membres_(classeur_()).liste, solo: soloCount_(classeur_()) });
   } catch (err) {
     return reponse_({ ok: false, error: String(err) });
   }
@@ -137,6 +152,20 @@ function doPost(e) {
     const f = feuille_();
     const lignes = f.getDataRange().getValues();
     const colId = COLONNES.indexOf('id'), colOwner = COLONNES.indexOf('owner');
+    if (d.action === 'ping') {
+      const anon = texte_(d.anon, 40);
+      if (!anon) return reponse_({ ok: false, error: 'compteur vide' });
+      const u = utilisateurs_(classeur_()), lu = u.getDataRange().getValues();
+      const maintenant = new Date().toISOString(), limite = new Date(Date.now() - 183 * 864e5).toISOString();
+      const val = [anon, d.solo ? 'oui' : 'non', maintenant];
+      let vu = false;
+      for (let i = lu.length - 1; i >= 1; i--) {
+        if (String(lu[i][0]) === anon) { u.getRange(i + 1, 1, 1, 3).setValues([val]); vu = true; }
+        else if (String(lu[i][2]) < limite) u.deleteRow(i + 1);
+      }
+      if (!vu) u.appendRow(val);
+      return reponse_({ ok: true });
+    }
     const owner = texte_(d.owner, 60);
     if (!owner) return reponse_({ ok: false, error: 'appareil non identifié' });
     if (d.action === 'progress') {

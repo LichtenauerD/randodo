@@ -1,17 +1,18 @@
 // Pages : traces, historique (mes randos, communauté, envies), réglages, diagnostic, envie du jour, saisie d'une rando.
 import { shareApp } from './share.js';
 import { startTour, maybeTour } from './tour.js';
-import { CONFIG, TYPES, EMOJI, VERSION } from './config.js';
+import { CONFIG, TYPES, VERSION } from './config.js';
 import { store, want, saveWant, wantActive, DEFAULT_WISH, bus } from './state.js';
 import { openHike, openPlace, frDate } from './sheet.js';
-import { renderObjectifs } from './objectifs.js';
+import { renderObjectifs, SECTORS, sectorOf } from './objectifs.js';
+import { glyph } from './map.js';
 import { needsOnboarding, openOnboarding } from './onboard.js';
 import { gradeOf, dodoSvg } from './grades.js';
 import { startGuide } from './guide.js';
 import { fromGpx } from './hikes.js';
 import { parseGpx, shareGpx } from './gpx.js';
 import { overpassState } from './overpass.js';
-import { renderHome, setHomeNavigator } from './home.js';
+import { renderHome, setHomeNavigator, GROUPS } from './home.js';
 import { kv, settings, esc, fmtKm, fmtDur, toast, uid, fetchJson, slugOf } from './util.js';
 import { SITES } from './places.js';
 
@@ -120,6 +121,7 @@ export function openLogForm({ place, hike, walked, walkedMinutes, onSaved, entry
 
 // ---------- Premier lancement : prénom, puis inscription dans la feuille du groupe ----------
 export function askName() {
+  pingUsage();
   if (settings.get('pseudo', '').trim()) { register(); if (needsOnboarding()) openOnboarding(() => { if (tab === 'accueil') render(); maybeTour(); }); else maybeTour(); return; }
   const box = openModal(`<div class="welcome"><img src="icons/icon-192.png" alt="" width="84" height="84"><h2>Bienvenue sur Randodo</h2><p class="motto">Le dodo ne vole pas. Il marche. Et toi ?</p>
     <p>Moi, c'est Didou le dodo : je t'accompagne sur les sentiers. Et toi, c'est quoi ton prénom ? Il sert à signer tes randos quand tu les partages.</p>
@@ -185,6 +187,7 @@ export async function joinCommunity() {
   if (!settings.get('pseudo', '').trim()) { toast('Indique d\'abord ton prénom dans Réglages.'); return false; }
   settings.set('community', 'oui');
   settings.set('joined', ''); settings.set('progressSent', '');
+  pingUsage(true);
   try {
     await register(true);
     await pushProgress(true);
@@ -205,6 +208,7 @@ export async function leaveCommunity() {
   try { if (groupAddress()) await post({ action: 'leave', owner: deviceKey() }); }
   catch (err) { toast('Le groupe ne répond pas, réessaie plus tard (' + err.message + ').', 5000); return false; }
   settings.set('community', 'non'); settings.set('joined', ''); settings.set('progressSent', '');
+  pingUsage(true);
   store.log.forEach((e) => { e.shared = false; e.sent = false; });
   await kv.set('log', store.log);
   await kv.set('community', null); await kv.set('members', []);
@@ -212,14 +216,25 @@ export async function leaveCommunity() {
   if (tab === 'historique' || tab === 'reglages') render();
   return true;
 }
-export function soloCommunity() { settings.set('community', 'non'); }
+export function soloCommunity() { settings.set('community', 'non'); pingUsage(true); }
+
+// Compteur anonyme d'utilisateurs : un identifiant au hasard, renouvelé chaque année, sans prénom ni lien
+// avec l'identifiant du groupe. Il sert seulement à afficher combien de personnes utilisent l'appli.
+export async function pingUsage(force) {
+  if (!groupAddress() || !communityChoice()) return;
+  let a = settings.get('anon', null);
+  if (!a || Date.now() - a.t > 365 * 864e5) { a = { id: uid() + uid(), t: Date.now() }; settings.set('anon', a); }
+  const last = settings.get('pinged', 0), solo = communityChoice() !== 'oui';
+  if (!force && Date.now() - last < 7 * 864e5 && settings.get('pingedSolo', null) === solo) return;
+  try { await post({ action: 'ping', anon: a.id, solo }); settings.set('pinged', Date.now()); settings.set('pingedSolo', solo); } catch { /* prochain lancement */ }
+}
 
 // Pour ceux qui avaient déjà fait la visite avant la 1.8 : la question est posée une fois.
 export function askCommunity(after) {
   if (!groupAddress()) { if (after) after(); return; }
   const box = openModal(`<div class="welcome">${dodoSvg(3, 84)}<h2>Rejoindre la communauté ?</h2>
     <p>Tes randos et tes lieux cochés seront visibles par les autres membres, et tu verras les leurs, avec le profil de chacun.</p>
-    <p class="note">Ou alors, tu randonnes en solo : rien ne quitte ton téléphone. Tu pourras changer d'avis dans Réglages.</p>
+    <p class="note">Ou alors, tu randonnes en solo : ni ton prénom ni tes sorties ne quittent ton téléphone. Tu pourras changer d'avis dans Réglages.</p>
     <button type="button" class="btn main" id="cm-yes" style="width:100%;margin-top:14px">Je rejoins la communauté</button>
     <button type="button" class="btn" id="cm-no" style="width:100%;margin-top:8px">Je reste en solo</button></div>`);
   document.getElementById('modal').onclick = null;
@@ -277,6 +292,7 @@ async function loadCommunity() {
   const entries = (j.entries || []).sort((a, b) => (a.date < b.date ? 1 : -1));
   await kv.set('community', { t: Date.now(), entries });
   await kv.set('members', Array.isArray(j.members) ? j.members : []);
+  await kv.set('soloCount', Number.isFinite(j.solo) ? j.solo : null);
   if (Array.isArray(j.suggestions)) await kv.set('websugg', { t: Date.now(), items: j.suggestions.filter((x) => x && x.title) });
   return entries;
 }
@@ -396,60 +412,81 @@ async function renderCommunity(body) {
     return;
   }
   let members = (await kv.get('members')) || [];
+  const me = await myPid();
   const paint = (entries, stale) => {
+    const solo = soloNow;
     const people = [...new Set(entries.map((e) => e.who).filter(Boolean))].sort();
     const names = [...new Set(members.map((m) => m.who).filter(Boolean))];
     const list = whoFilter ? entries.filter((e) => e.who === whoFilter) : entries;
     const crew = members.filter((m) => m.who).sort((a, b) => (b.lieux || 0) - (a.lieux || 0) || a.who.localeCompare(b.who));
-    body.innerHTML = `${stale ? `<p class="note" style="margin-bottom:10px">${esc(stale)}</p>` : ''}${crew.length ? `<div class="crew">${crew.map((m) => { const g = gradeOf(m.lieux || 0); return `<button type="button" class="mate" data-pid="${esc(m.pid || '')}" data-who="${esc(m.who)}">${dodoSvg(g.dodo, 42)}<span><b>${esc(m.who)}</b><small>${esc(m.grade || g.name)} · ${m.lieux || 0} lieu${(m.lieux || 0) > 1 ? 'x' : ''}</small></span><i class="mate-go">›</i></button>`; }).join('')}</div>` : ''}
+    const mineSet = myDoneSlugs();
+    const crewHtml = crew.map((m) => {
+      const g = gradeOf(m.lieux || 0), self = me && m.pid === me;
+      const common = self ? 0 : faitsOf(m).filter((k) => mineSet.has(k)).length;
+      const tag = self ? '<em class="mate-me">toi</em>' : common ? `<em class="mate-common">${common} lieu${common > 1 ? 'x' : ''} en commun</em>` : '';
+      return `<button type="button" class="mate" data-pid="${esc(m.pid || '')}" data-who="${esc(m.who)}">${dodoSvg(g.dodo, 42)}<span><b>${esc(m.who)}</b><small>${esc(m.grade || g.name)} · ${m.lieux || 0} lieu${(m.lieux || 0) > 1 ? 'x' : ''}</small>${tag}</span><i class="mate-go">›</i></button>`;
+    }).join('');
+    body.innerHTML = `${stale ? `<p class="note" style="margin-bottom:10px">${esc(stale)}</p>` : ''}<div class="crew-count"><b>${crew.length}</b> membre${crew.length > 1 ? 's' : ''} dans la communauté</div>${crew.length ? `<div class="crew">${crewHtml}</div>` : ''}
       <div class="checks" style="margin-bottom:12px"><button type="button" class="chip${whoFilter ? '' : ' on'}" data-w="">Tout le monde</button>${people.map((w) => `<button type="button" class="chip${whoFilter === w ? ' on' : ''}" data-w="${esc(w)}">${esc(w)}</button>`).join('')}</div>
       ${list.map((e, i) => `<div class="card" data-i="${i}"><h3>${lvDot(e.level)}${esc(e.placeName)}</h3>
         <p class="meta"><span class="who">${esc(e.who || '?')}</span>${frDate(e.date)}${e.rating ? ', note ' + e.rating + '/5' : ''}</p>${numsLine(e)}${e.note ? `<p style="margin-top:6px;font-size:.92rem">${esc(e.note)}</p>` : ''}
-        ${e.lat != null ? '<div class="row"><button type="button" class="btn small" data-a="map">Voir sur la carte</button></div>' : ''}</div>`).join('') || '<div class="empty"><b>Rien de partagé pour l\'instant</b>La première rando partagée apparaîtra ici.</div>'}`;
+        ${e.lat != null ? '<div class="row"><button type="button" class="btn small" data-a="map">Voir sur la carte</button></div>' : ''}</div>`).join('') || '<div class="empty"><b>Rien de partagé pour l\'instant</b>La première rando partagée apparaîtra ici.</div>'}
+      ${solo ? `<p class="solo-count">+ ${solo} utilisateur${solo > 1 ? 's' : ''} ne souhaitant pas faire partie de la communauté</p>` : ''}`;
     body.querySelectorAll('[data-w]').forEach((b) => { b.onclick = () => { whoFilter = b.dataset.w; paint(entries, stale); }; });
-    body.querySelectorAll('.mate').forEach((b) => { b.onclick = () => openProfile(crew.find((m) => (m.pid || '') === b.dataset.pid && m.who === b.dataset.who), entries); });
+    body.querySelectorAll('.mate').forEach((b) => { b.onclick = () => openProfile(crew.find((m) => (m.pid || '') === b.dataset.pid && m.who === b.dataset.who), entries, me); });
     body.querySelectorAll('[data-a=map]').forEach((b) => {
       b.onclick = () => { const e = list[+b.closest('.card').dataset.i]; goTab('carte'); openPlace({ id: 'g' + e.id, name: e.placeName, type: 'lieu', lat: e.lat, lon: e.lon, score: 0 }); };
     });
   };
+  let soloNow = await kv.get('soloCount');
   const cached = await kv.get('community');
   if (cached) paint(cached.entries, ''); else body.innerHTML = '<div class="loading"><span class="spin"></span>Chargement des randos du groupe</div>';
-  try { const fresh = await loadCommunity(); members = (await kv.get('members')) || []; paint(fresh, ''); } catch (err) {
+  try { const fresh = await loadCommunity(); members = (await kv.get('members')) || []; soloNow = await kv.get('soloCount'); paint(fresh, ''); } catch (err) {
     if (histTab !== 'groupe') return;
     if (cached) paint(cached.entries, 'Liste non actualisée, le groupe est injoignable (' + err.message + ').');
     else body.innerHTML = `<div class="empty"><b>Le groupe est injoignable</b>${esc(err.message)}. Vérifie le réseau et l'adresse du groupe dans Réglages.</div>`;
   }
 }
 
-// Lieux regroupés par zone, puis par type (avec son pictogramme).
-const ZONES = ['Vosges', 'Vosges du Nord', 'Forêt-Noire', 'Kaiserstuhl', 'Jura alsacien', 'Jura', 'Suisse'];
-function placesByZone(places) {
-  const zones = [...new Set(places.map((s) => s.massif))].sort((a, b) => ((ZONES.indexOf(a) + 1) || 99) - ((ZONES.indexOf(b) + 1) || 99));
-  const order = Object.keys(TYPES);
-  return zones.map((z) => {
-    const here = places.filter((s) => s.massif === z);
-    const types = [...new Set(here.map((s) => s.type))].sort((a, b) => order.indexOf(a) - order.indexOf(b));
-    return `<div class="pf-zone"><h4>${esc(z)} <small>${here.length}</small></h4>${types.map((t) => {
-      const list = here.filter((s) => s.type === t);
-      return `<div class="pf-type"><span class="pf-t">${EMOJI[t] || '📍'} ${esc((TYPES[t] || TYPES.lieu).label)}</span><ul>${list.map((s) => `<li>${esc(s.name)}</li>`).join('')}</ul></div>`;
-    }).join('')}</div>`;
+const SITE_BY_SLUG = new Map(SITES.map((x) => [slugOf(x.name), x]));
+const faitsOf = (m) => String(m.faits || '').split(',').map((k) => k.trim()).filter((k) => SITE_BY_SLUG.has(k));
+const myDoneSlugs = () => new Set(SITES.filter((p) => store.isDone(p)).map((p) => slugOf(p.name)));
+
+// Lieux d'un membre, rangés dans les mêmes catégories que la recherche, avec les lieux en commun en vert.
+function placesByGroup(places, common) {
+  const html = GROUPS.map((g) => {
+    const list = places.filter((p) => g.types.includes(p.type));
+    if (!list.length) return '';
+    const c = (TYPES[g.types[0]] || TYPES.lieu).color;
+    return `<div class="pf-group" style="--c:${c}"><div class="pf-gh"><span class="ic">${glyph(g.icon)}</span><b>${esc(g.label)}</b><small>${list.length}</small></div>
+      <div class="pf-pills">${list.map((p) => `<span class="pf-pill${common.has(slugOf(p.name)) ? ' common' : ''}">${common.has(slugOf(p.name)) ? '✓ ' : ''}${esc(p.name)}</span>`).join('')}</div></div>`;
   }).join('');
+  const rest = places.filter((p) => !GROUPS.some((g) => g.types.includes(p.type)));
+  return html + (rest.length ? `<div class="pf-group" style="--c:${TYPES.lieu.color}"><div class="pf-gh"><span class="ic">${glyph('lieu')}</span><b>Autres lieux</b><small>${rest.length}</small></div><div class="pf-pills">${rest.map((p) => `<span class="pf-pill${common.has(slugOf(p.name)) ? ' common' : ''}">${esc(p.name)}</span>`).join('')}</div></div>` : '');
 }
 
-// Profil d'un membre : son Didou, son grade, ses lieux faits et ses randos partagées.
-function openProfile(m, entries) {
+// Profil d'un membre : progression par secteur, randos partagées, lieux faits (en commun en vert).
+function openProfile(m, entries, me) {
   if (!m) return;
-  const g = gradeOf(m.lieux || 0);
+  const g = gradeOf(m.lieux || 0), self = me && m.pid === me;
   const mine = entries.filter((e) => (m.pid && e.pid ? e.pid === m.pid : e.who === m.who));
-  const bySlug = new Map(SITES.map((s) => [slugOf(s.name), s]));
-  const places = String(m.faits || '').split(',').map((x) => bySlug.get(x.trim())).filter(Boolean).sort((a, b) => a.name.localeCompare(b.name, 'fr'));
-  const km = mine.reduce((s, e) => s + (Number(e.km) || 0), 0);
-  const box = openModal(`<div class="profile"><div class="pf-head">${dodoSvg(g.dodo, 76)}<div><h2>${esc(m.who)}</h2><p class="meta">${esc(m.grade || g.name)}${m.since ? ', membre depuis le ' + frDate(m.since) : ''}</p></div></div>
+  const places = faitsOf(m).map((k) => SITE_BY_SLUG.get(k)).sort((a, b) => a.name.localeCompare(b.name, 'fr'));
+  const mySet = self ? new Set() : myDoneSlugs();
+  const common = new Set(places.map((p) => slugOf(p.name)).filter((k) => mySet.has(k)));
+  const km = mine.reduce((s2, e) => s2 + (Number(e.km) || 0), 0);
+  const sectors = SECTORS.map((sec) => {
+    const total = SITES.filter((p) => sectorOf(p) === sec.id).length;
+    const done = places.filter((p) => sectorOf(p) === sec.id).length;
+    const pct = total ? Math.round((done / total) * 100) : 0;
+    return `<div class="pf-sec"><span>${esc(sec.name)}</span><div class="pf-bar"><i style="width:${Math.max(pct, done ? 3 : 0)}%"></i></div><b>${pct} %</b></div>`;
+  }).join('');
+  const box = openModal(`<div class="profile"><div class="pf-head">${dodoSvg(g.dodo, 76)}<div><h2>${esc(m.who)}${self ? ' <small class="mate-me">toi</small>' : ''}</h2><p class="meta">${esc(m.grade || g.name)}${m.since ? ', membre depuis le ' + frDate(m.since) : ''}</p></div></div>
+    <div class="pf-secs"><h3>Exploré</h3>${sectors}</div>
     <div class="totals"><div><b>${m.lieux || 0}</b><span>lieu${(m.lieux || 0) > 1 ? 'x' : ''} fait${(m.lieux || 0) > 1 ? 's' : ''}</span></div><div><b>${mine.length}</b><span>rando${mine.length > 1 ? 's' : ''}</span></div><div><b>${Math.round(km)}</b><span>km</span></div></div>
     <h3>Ses randos</h3>
     ${mine.map((e, i) => `<div class="pf-row" data-i="${i}"><b>${lvDot(e.level)}${esc(e.placeName)}</b><small>${frDate(e.date)}${e.km ? ', ' + String(Math.round(e.km * 10) / 10).replace('.', ',') + ' km' : ''}${e.rating ? ', ' + e.rating + '/5' : ''}</small>${e.note ? `<p>${esc(e.note)}</p>` : ''}${e.lat != null ? '<button type="button" class="btn small" data-a="map">Voir sur la carte</button>' : ''}</div>`).join('') || '<p class="meta">Aucune rando partagée pour l\'instant.</p>'}
-    ${places.length ? `<h3>Ses lieux cochés</h3>${placesByZone(places)}` : ''}
-    <div class="foot"><button type="button" class="btn main" id="pf-close" style="width:100%">Fermer</button></div></div>`);
+    ${places.length ? `<h3>Ses lieux cochés</h3>${common.size ? `<p class="pf-legend"><span class="pf-pill common">✓ en vert</span> ${common.size} lieu${common.size > 1 ? 'x' : ''} que tu as fait${common.size > 1 ? 's' : ''} aussi</p>` : ''}${placesByGroup(places, common)}` : ''}
+    <div class="foot"><button type="button" class="btn main" id="pf-close">Fermer</button></div></div>`);
   box.classList.add('tall');
   $('#pf-close', box).onclick = closeModal;
   box.querySelectorAll('[data-a=map]').forEach((b) => {
@@ -467,7 +504,7 @@ function renderSettings() {
       <div class="row"><button type="button" class="btn small main" id="s-fb-send">Envoyer</button></div></div>
     <div class="card"><h3>Faire découvrir Randodo</h3><p class="meta">Envoie le lien de l'appli à tes amis.</p>
       <div class="row"><button type="button" class="btn small main" id="s-share">Partager Randodo</button></div></div>
-    <div class="card"><h3>Communauté</h3><p class="meta">${communityChoice() === 'oui' ? 'Tu fais partie de la communauté : tes randos et tes lieux cochés sont visibles par les autres membres.' : 'Tu randonnes en solo : rien ne quitte ton téléphone. En rejoignant la communauté, tes randos et tes lieux cochés sont partagés, et tu vois ceux des autres.'}</p>
+    <div class="card"><h3>Communauté</h3><p class="meta">${communityChoice() === 'oui' ? 'Tu fais partie de la communauté : tes randos et tes lieux cochés sont visibles par les autres membres.' : 'Tu randonnes en solo : ni ton prénom ni tes sorties ne quittent ton téléphone. En rejoignant la communauté, tes randos et tes lieux cochés sont partagés, et tu vois ceux des autres.'}</p>
       <div class="row">${communityChoice() === 'oui' ? '<button type="button" class="btn small" id="s-leave">Quitter la communauté</button>' : '<button type="button" class="btn small main" id="s-join">Rejoindre la communauté</button>'}</div>
       <label class="field"><span>Mon prénom</span><input type="text" id="s-pseudo" value="${esc(settings.get('pseudo', ''))}" placeholder="Affiché à côté de tes randos" maxlength="24"></label>
       <details class="adv"><summary>Adresse du groupe (avancé)</summary>

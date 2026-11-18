@@ -128,7 +128,7 @@ const STEPS = [
   {
     id: 'community', before: () => navigate('accueil'),
     skipIf: () => !groupAddress() || communityChoice() !== '',
-    text: 'Rejoindre la communauté ? Tes randos et tes lieux cochés sont partagés avec les autres membres, et tu vois les leurs, profil par profil. Sinon, tu randonnes en solo et rien ne quitte ton téléphone. Ça se change dans Réglages.',
+    text: 'Rejoindre la communauté ? Tes randos et tes lieux cochés sont partagés avec les autres membres, et tu vois les leurs, profil par profil. Sinon, tu randonnes en solo, et ni ton prénom ni tes sorties ne quittent ton téléphone. Ça se change dans Réglages.',
     dodo: 'Tout seul on va plus vite, à plusieurs on va plus loin. Et on partage le goûter.',
     next: 'Je rejoins', skip: 'Je reste en solo',
     after: () => joinCommunity(),
