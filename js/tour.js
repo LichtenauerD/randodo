@@ -94,7 +94,7 @@ const STEPS = [
   {
     id: 'stop', target: '#hud-stop',
     text: '« Terminer », et ta sortie rejoint l\'historique.',
-    dodo: 'Je recommande de finir par une tarte aux myrtilles. C\'est scientifique.',
+    dodo: 'Je recommande de terminer par une tarte aux myrtilles. C\'est scientifique.',
     after: () => { if (isGuiding()) stopGuide(); closeSheet(); },
   },
   {
