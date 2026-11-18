@@ -4,7 +4,7 @@ const params = new URLSearchParams(location.search);
 // Mode test : ?mock=http://localhost:8765 remplace tous les services par un serveur local.
 const MOCK = params.get('mock') || '';
 
-export const VERSION = '1.6.0';
+export const VERSION = '1.6.1';
 
 export const CONFIG = {
   mock: MOCK,
@@ -106,7 +106,7 @@ export const TYPES = {
   rocher: { label: 'Rochers', one: 'Rocher', color: '#77706a' },
   chateau: { label: 'Châteaux et ruines', one: 'Château ou ruine', color: '#a04a5b' },
   grotte: { label: 'Grottes', one: 'Grotte', color: '#4d4a63' },
-  tourbiere: { label: 'Tourbières et vallons', one: 'Tourbière', color: '#6b8f3a' },
+  tourbiere: { label: 'Forêts et marais', one: 'Forêt ou marais', color: '#6b8f3a' },
   gorge: { label: 'Gorges', one: 'Gorge', color: '#3d7d5c' },
   refuge: { label: 'Refuges', one: 'Refuge', color: '#8a6a1f' },
   lieu: { label: 'Autres lieux', one: 'Lieu', color: '#55606a' },

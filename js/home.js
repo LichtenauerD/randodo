@@ -3,6 +3,7 @@ import { CONFIG, TYPES } from './config.js';
 import { SITES, imageOf, fetchImages, searchRemote } from './places.js';
 import { store, want, saveWant } from './state.js';
 import { openPlace } from './sheet.js';
+import { prefetchPlace } from './hikes.js';
 import { glyph } from './map.js';
 import { kv, settings, dist, esc, fetchJson, toast, fmtKm, slugOf } from './util.js';
 import { AUDIENCES, idealPlace, idealLabel } from './ideal.js';
@@ -18,7 +19,7 @@ export const GROUPS = [
   { id: 'vue', short: 'Sommets', phrase: 'des sommets et des points de vue', label: 'Sommets et points de vue', types: ['sommet', 'vue'], icon: 'sommet' },
   { id: 'ruine', short: 'Châteaux', phrase: 'des châteaux et des ruines', label: 'Châteaux et ruines', types: ['chateau'], icon: 'chateau' },
   { id: 'roche', short: 'Grottes & Rochers', phrase: 'des grottes et des rochers', label: 'Grottes et rochers', types: ['rocher', 'grotte'], icon: 'rocher' },
-  { id: 'nature', short: 'Tourbières & vallons', phrase: 'des tourbières et des vallons', label: 'Tourbières et vallons', types: ['tourbiere'], icon: 'tourbiere' },
+  { id: 'nature', short: 'Forêts & marais', phrase: 'des forêts et des marais', label: 'Forêts et marais', types: ['tourbiere'], icon: 'tourbiere' },
 ];
 const DURATIONS = [[30, '30 min'], [60, '1 h'], [90, '1 h 30'], [120, '2 h'], [180, '3 h']];
 // Sites d'altitude, écartés des suggestions de novembre à avril.
@@ -63,11 +64,14 @@ function locateMe() {
 }
 
 // ---------- Suggestions de la semaine (tirées de la sélection, renouvelées chaque lundi) ----------
-function weeklyPicks(origin) {
+function weeklyPicks(origin, idx = {}) {
   const month = new Date().getMonth() + 1;
   const winter = month >= 11 || month <= 4;
   const maxMin = settings.get('search', {}).minutes || 120;
+  // Seulement des lieux dont les randos sont déjà calculées : la première impression doit être immédiate.
+  const ready = (s) => idx[slugOf(s.name)] && idx[slugOf(s.name)].length;
   let pool = SITES.filter((s) => !store.isDone(s) && !(winter && HIGH.has(s.name)));
+  if (pool.some(ready)) pool = pool.filter(ready);
   if (origin) pool = pool.map((s) => ({ s, min: estMinutes(dist([origin.lat, origin.lon], [s.lat, s.lon]) / 1000) })).filter((x) => x.min <= Math.max(maxMin, 90)).map((x) => Object.assign(x.s, { _min: x.min }));
   const rnd = seeded(isoWeek());
   const shuffled = pool.map((s) => [rnd(), s]).sort((a, b) => a[0] - b[0]).map((x) => x[1]);
@@ -269,12 +273,12 @@ function mineHtml() {
 export async function renderHome(el) {
   host = el;
   const origin = getOrigin();
-  const { picks } = weeklyPicks(origin);
+  const { picks } = weeklyPicks(origin, await hikeIndex());
   const web = await webIdeas(false);
   const name = settings.get('pseudo', '').trim();
   el.innerHTML = `<div class="home">
     <header class="hello"><img src="icons/icon-192.png" alt="" width="56" height="56"><h1>Salut${name ? ' ' + esc(name) : ''}</h1><p>${SEASON[new Date().getMonth()]}</p>
-      <svg class="walk" viewBox="0 0 320 34" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" d="M3 27 C 40 27, 52 9, 92 12 S 142 31, 182 21 S 240 5, 272 10 S 300 20, 312 9"/><circle cx="312" cy="9" r="5"/></svg></header>
+      <svg class="walk" viewBox="0 0 320 34" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" d="M3 27 C 40 27, 52 9, 92 12 S 142 31, 182 21 S 240 5, 272 10 S 300 20, 312 9"/><path class="ants" pathLength="100" d="M3 27 C 40 27, 52 9, 92 12 S 142 31, 182 21 S 240 5, 272 10 S 300 20, 312 9"/><circle class="halo" cx="312" cy="9" r="5"/><circle cx="312" cy="9" r="5"/></svg></header>
     <section class="finder" id="hm-finder"></section>
     <div id="hm-results"></div>
     <section class="week" id="hm-picks">${picksHtml(picks)}</section>
@@ -284,6 +288,8 @@ export async function renderHome(el) {
   bindFinder();
   if ($('#hm-hist', el)) $('#hm-hist', el).onclick = () => goTab('historique');
   bindPlaces($('#hm-picks', el), picks);
+  // Randos des idées de la semaine rangées sur le téléphone dès l'accueil : fiche instantanée, même hors réseau.
+  picks.forEach((p) => prefetchPlace(p).catch(() => {}));
   bindWeb(web);
   if (lastSearch) paintResults();
   fetchImages(picks, () => { if (host === el && !el.hidden && $('#hm-picks', el)) { $('#hm-picks', el).innerHTML = picksHtml(picks); bindPlaces($('#hm-picks', el), picks); } });

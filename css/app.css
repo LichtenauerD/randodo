@@ -352,6 +352,11 @@ a.btn { text-decoration: none; color: inherit; }
 .hello .walk { display: block; width: 100%; height: 34px; margin: 10px 0 -6px; overflow: visible; }
 .hello .walk path { fill: none; stroke: var(--violet); stroke-width: 3.5; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 1; animation: drawline 1.6s .2s cubic-bezier(.45,.05,.3,1) forwards; }
 .hello .walk circle { fill: var(--balise); opacity: 0; animation: fadein .3s 1.7s forwards; }
+/* Après le tracé : des pas blancs qui avancent sur le fil, et la balise d'arrivée qui pulse. */
+.hello .walk path.ants { stroke: #fff; stroke-width: 1.6; stroke-dasharray: 1.2 3.2; stroke-dashoffset: 0; opacity: 0; animation: fadein .4s 1.8s forwards, ants 1.4s 1.8s linear infinite; }
+.hello .walk circle.halo { fill: none; stroke: var(--balise); stroke-width: 2; transform-box: fill-box; transform-origin: center; animation: halo 2.2s 2s ease-out infinite; }
+@keyframes ants { to { stroke-dashoffset: -4.4; } }
+@keyframes halo { 0% { opacity: .9; transform: scale(1); } 100% { opacity: 0; transform: scale(2.6); } }
 @keyframes drawline { to { stroke-dashoffset: 0; } }
 @keyframes fadein { to { opacity: 1; } }
 .signs > * { animation: signin .42s cubic-bezier(.2,.9,.3,1.15) both; }
@@ -369,7 +374,7 @@ button:active:not(:disabled) { transform: scale(.97); }
 .me-ring { animation: ring 1.8s ease-out infinite; }
 @keyframes ring { from { transform: scale(.6); opacity: .7; } to { transform: scale(2.4); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) {
-  .trace-draw, .trace-flow, .signs > *, .plist > *, .hello .walk path, .hello .walk circle, .me-ring, .pop, .bump { animation: none !important; stroke-dashoffset: 0; opacity: 1; }
+  .trace-draw, .trace-flow, .signs > *, .plist > *, .hello .walk path, .hello .walk circle, .hello .walk path.ants, .hello .walk circle.halo, .me-ring, .pop, .bump { animation: none !important; stroke-dashoffset: 0; opacity: 1; }
   .trace-flow { display: none; }
 }
 .me { position: relative; }

@@ -1,3 +1,5 @@
+import { POP, LOW } from '../data/popularity.js';
+import { slugOf } from './util.js';
 // « Idéal… » : pour qui convient un lieu ou une boucle. Règles simples, lues dans la distance, la montée et le type de lieu.
 export const AUDIENCES = [
   { id: 'potes', label: 'Entre potes', sub: 'une boucle qui se mérite' },
@@ -5,6 +7,7 @@ export const AUDIENCES = [
   { id: 'petits', label: 'Avec des petits', sub: 'court, peu de montée' },
   { id: 'couple', label: 'En couple', sub: 'un très beau coin' },
   { id: 'solo', label: 'En solo', sub: 'calme et nature' },
+  { id: 'baroudeur', label: 'En baroudeur', sub: 'les coins dont personne ne parle' },
 ];
 const FUN = new Set(['lac', 'cascade', 'chateau', 'grotte', 'rocher', 'gorge', 'refuge']); // de quoi occuper des enfants
 const SCENIC = new Set(['vue', 'lac', 'cascade', 'chateau', 'tourbiere']);
@@ -24,8 +27,12 @@ export function idealHike(h, type) {
 }
 
 // Un lieu : réunion de ses boucles ; sans boucle connue, d'après le type seul.
+// Peu connu : article Wikipédia absent ou parmi les 30 % les moins lus (fr, de, en, sur un an).
+export const isHidden = (p) => { const v = POP[slugOf(p.name)]; return v != null && v <= LOW; };
+
 export function idealPlace(p, hikes) {
   const s = new Set();
+  if (isHidden(p)) s.add('baroudeur');
   if (hikes && hikes.length) for (const h of hikes) for (const a of idealHike(h, p.type)) s.add(a);
   else {
     if (['sommet', 'refuge'].includes(p.type)) s.add('potes');
