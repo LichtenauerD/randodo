@@ -151,7 +151,7 @@ function finderHtml() {
       <div class="flv">${CONFIG.levels.map((l) => `<button type="button" data-v="${l.id}" class="${q.levels.includes(l.id) ? 'on' : ''}" style="--c:${LVC[l.id]}"><b>${l.label}</b><span>${LVSUB[l.id]}</span></button>`).join('')}</div></div>
     <div class="fq"><span class="fl">Idéal… <small>${q.ideal.length ? '' : 'pour tout le monde'}</small></span>
       <div class="fideal">${AUDIENCES.map((a) => `<button type="button" data-v="${a.id}" class="${q.ideal.includes(a.id) ? 'on' : ''}"><b>${a.label}</b><span>${a.sub}</span></button>`).join('')}</div></div>
-    <button type="button" class="btn main big find" id="hm-search"><span id="f-count">Voir les randos</span></button>`;
+    <button type="button" class="btn main big find" id="hm-search"><span id="f-count">Afficher les lieux</span></button>`;
 }
 function bindFinder() {
   const box = host && $('#hm-finder', host);
@@ -196,19 +196,14 @@ function bindFinder() {
 }
 
 // Aperçu du nombre de lieux, recalculé à chaque choix (lieux de la sélection, distance à vol d'oiseau).
+// Bouton de recherche : libellé fixe, le nombre de lieux s'affiche avec les résultats.
+// On profite du choix du départ pour demander les temps de route, la recherche est ensuite immédiate.
 async function countPreview() {
   const lab = host && $('#f-count', host);
   if (!lab) return;
-  const o = getOrigin(), q = getQ();
-  if (!o) { lab.textContent = 'Voir les randos'; return; }
-  const idx = await hikeIndex();
-  const known = driveKnown(o);
-  // Même sélection que la recherche : le chiffre du bouton est le nombre de lieux affichés ensuite.
-  const n = selectPlaces(q, o, idx, known).length;
-  const txt = n ? `Voir ${n > 1 ? 'les ' + n + ' lieux' : 'le lieu'}` : 'Chercher plus largement';
-  if (lab.textContent !== txt) { lab.textContent = txt; lab.parentElement.classList.remove('bump'); void lab.offsetWidth; lab.parentElement.classList.add('bump'); }
-  // Temps de route réels pas encore connus pour ce départ : on les demande une fois, puis on recompte.
-  if (!known) driveMap(o).then((m) => { if (m) countPreview(); });
+  lab.textContent = 'Afficher les lieux';
+  const o = getOrigin();
+  if (o && !driveKnown(o)) driveMap(o);
 }
 
 // Choix du point de départ : une commune.
