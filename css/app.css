@@ -371,3 +371,27 @@ button:active:not(:disabled) { transform: scale(.97); }
 .me-ring { position: absolute; inset: -3px; border-radius: 50%; background: rgba(26,115,232,.45); z-index: -1; }
 .motto { font: 700 1.15rem/1.25 var(--sign); color: var(--violet); margin: 4px 0 10px; }
 .fgrid button { line-height: 1.1; text-align: center; }
+
+/* ---------- Météo ---------- */
+.wx { margin-top: 14px; padding: 12px; border-radius: 16px; background: var(--brume); }
+.wx-head { display: flex; align-items: baseline; justify-content: space-between; }
+.wx-head h3 { font-size: 1.1rem; margin: 0; }
+.wx-src { font-size: .75rem; color: var(--gris); }
+.wx-days { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; margin: 10px 0; }
+.wx-days button { display: flex; flex-direction: column; align-items: center; padding: 6px 0 5px; border: 0; border-radius: 10px; background: #fff; font: 600 .7rem var(--text); color: var(--gris); transition: background .2s, color .2s; }
+.wx-days button b { font: 700 1rem var(--sign); color: var(--encre); }
+.wx-days button.on { background: var(--violet); color: rgba(255,255,255,.85); }
+.wx-days button.on b { color: #fff; }
+.wx-main { display: flex; align-items: center; gap: 10px; font: 700 1.15rem var(--sign); margin-bottom: 6px; }
+.wx-ic { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: #fff; }
+.wx-ic svg { width: 26px; height: 26px; }
+.wx-main.f0 .wx-ic { color: #d99a00; } .wx-main.f1 .wx-ic { color: #7a8a99; } .wx-main.f2 .wx-ic { color: #8c9499; }
+.wx-main.f3 .wx-ic { color: #2769b3; } .wx-main.f4 .wx-ic { color: #5aa0c8; } .wx-main.f5 .wx-ic { color: #c23a2b; }
+.wx-row { display: flex; align-items: center; justify-content: space-between; padding: 5px 0; border-top: 1px solid var(--trait); font-size: .92rem; }
+.wx-where small { color: var(--gris); }
+.wx-t { display: flex; align-items: center; gap: 8px; }
+.wx-t i { font-style: normal; color: #2769b3; font-weight: 600; } .wx-t b { color: #c2531f; }
+.wx-bar { width: 46px; height: 5px; border-radius: 3px; background: linear-gradient(90deg, #2769b3, #f5b700, #c2531f); }
+.wx-tips { margin: 8px 0 0; font-size: .88rem; }
+.wx-agree { margin: 6px 0 0; font-size: .8rem; color: var(--gris); }
+.wx-agree.warn { color: #9a5b00; }

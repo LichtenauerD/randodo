@@ -31,6 +31,7 @@ export const CONFIG = {
   // Temps de route (serveur de démonstration OSRM). En cas d'échec, l'appli estime la durée à partir de la distance.
   osrm: MOCK ? MOCK + '/osrm/' : 'https://router.project-osrm.org/table/v1/driving/',
   elevation: MOCK ? MOCK + '/elevation' : 'https://api.open-meteo.com/v1/elevation',
+  forecast: MOCK ? MOCK + '/forecast' : 'https://api.open-meteo.com/v1/forecast',
   photon: MOCK ? MOCK + '/photon' : 'https://photon.komoot.io/api/',
   wikipedia: MOCK ? MOCK + '/wikipedia' : 'https://fr.wikipedia.org/w/api.php',
   wikidataSparql: MOCK ? MOCK + '/sparql' : 'https://query.wikidata.org/sparql',

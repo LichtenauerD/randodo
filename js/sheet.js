@@ -1,4 +1,5 @@
 // Fiche d'un lieu et fiche d'une randonnée (feuille basse).
+import { weatherHtml, bindWeather } from './weather.js';
 import { CONFIG, TYPES } from './config.js';
 import { hikesFor, loadCircuit, ensureCorridor } from './hikes.js';
 import { imageOf } from './places.js';
@@ -257,6 +258,7 @@ export function openHike(h, ctx = {}) {
         <div><b>${fmtDur(h.minutes)}</b><span>de marche</span></div>
       </div>
       ${profileSvg(h.prof)}
+      ${weatherHtml()}
       ${startTxt}
       ${warns.length ? `<ul class="warns">${warns.map((w) => `<li>${esc(w)}</li>`).join('')}</ul>` : ''}
       <div class="actions">
@@ -272,6 +274,12 @@ export function openHike(h, ctx = {}) {
   el().classList.add('half');
   showTrace(h, { corridor: true, pad: { top: 84, bottom: Math.round((window.innerHeight - 58) * 0.54) + 10 } });
   if ($('#back')) $('#back').onclick = () => { clearTrace(); reopenPlace(); };
+  // Jour de rando choisi : gardé en date réelle, ramené à aujourd'hui une fois passé.
+  const today = () => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), d.getDate()); };
+  bindWeather(h, el(), {
+    get: () => { const s = settings.get('hikeDay', null); if (!s) return 0; const [y, m, d] = s.split('-').map(Number); return Math.max(0, Math.round((new Date(y, m - 1, d) - today()) / 86400000)); },
+    set: (i) => { const d = today(); d.setDate(d.getDate() + i); settings.set('hikeDay', `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`); },
+  });
   $('.sign.sel', el()).onclick = () => el().classList.toggle('peek');
   $('#a-gpx').onclick = async () => {
     const r = await shareGpx(h);

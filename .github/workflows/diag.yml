@@ -6,6 +6,10 @@ on:
         description: 'Script de tools/ à lancer'
         required: false
         default: 'diag-links.mjs'
+      file:
+        description: 'Fichier d’entrée'
+        required: false
+        default: ''
 jobs:
   diag:
     runs-on: ubuntu-latest
@@ -15,4 +19,4 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: node tools/${{ github.event.inputs.script || 'diag-links.mjs' }}
+      - run: FILE=${{ github.event.inputs.file }} node tools/${{ github.event.inputs.script || 'diag-links.mjs' }}
