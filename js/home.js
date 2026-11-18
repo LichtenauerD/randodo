@@ -106,7 +106,7 @@ function drawPicks(origin) {
 
 // Le dodo de l'accueil : il suit le fil violet jusqu'à la balise (une fois par session), puis attend.
 // Un toucher le fait sauter et parler.
-const WALK_SAYS = ['Moi c\'est Didou. On y va ?', 'Le dodo ne vole pas. Il marche.', 'Une cascade, ça te dit ?', 'Prends de l\'eau !', 'Encore un sommet ?', 'Je connais un coin calme…'];
+const WALK_SAYS = ['Moi c\'est Didou le dodo. On y va ?', 'Le dodo ne vole pas. Il marche.', 'Une cascade, ça te dit ?', 'Prends de l\'eau !', 'Encore un sommet ?', 'Je connais un coin calme…'];
 function startWalker(hello) {
   if (!hello) return;
   const path = hello.querySelector('.walk path');
@@ -114,7 +114,7 @@ function startWalker(hello) {
   const box = document.createElement('button');
   box.type = 'button';
   box.className = 'walker';
-  box.setAttribute('aria-label', 'Didou, le dodo de Randodo');
+  box.setAttribute('aria-label', 'Didou le dodo');
   box.innerHTML = walkerSvg(56) + '<span class="walker-say" hidden></span>';
   hello.appendChild(box);
   const total = path.getTotalLength();

@@ -122,7 +122,7 @@ export function openLogForm({ place, hike, walked, walkedMinutes, onSaved, entry
 export function askName() {
   if (settings.get('pseudo', '').trim()) { register(); if (needsOnboarding()) openOnboarding(() => { if (tab === 'accueil') render(); maybeTour(); }); else maybeTour(); return; }
   const box = openModal(`<div class="welcome"><img src="icons/icon-192.png" alt="" width="84" height="84"><h2>Bienvenue sur Randodo</h2><p class="motto">Le dodo ne vole pas. Il marche. Et toi ?</p>
-    <p>C'est quoi ton prénom ? Il sert à signer tes randos quand tu les partages avec les autres.</p>
+    <p>Moi, c'est Didou le dodo : je t'accompagne sur les sentiers. Et toi, c'est quoi ton prénom ? Il sert à signer tes randos quand tu les partages.</p>
     <label class="field"><input type="text" id="wn-name" placeholder="Ton prénom" maxlength="24" autocomplete="given-name" autocapitalize="words"></label>
     <button type="button" class="btn main" id="wn-ok" style="width:100%;margin-top:14px">C'est parti</button></div>`);
   document.getElementById('modal').onclick = null; // on ne ferme pas cette fenêtre en touchant à côté
@@ -341,7 +341,7 @@ async function renderCommunity(body) {
 function renderSettings() {
   const p = page();
   p.innerHTML = `<h2>Réglages</h2>
-    <div class="card"><h3>Visite guidée</h3><p class="meta">Le petit tour de l'appli du premier lancement, avec Didou.</p>
+    <div class="card"><h3>Visite guidée</h3><p class="meta">Le petit tour de l'appli du premier lancement, avec Didou le dodo.</p>
       <div class="row"><button type="button" class="btn small main" id="s-tuto">Rejouer le tutoriel</button></div></div>
     <div class="card"><h3>Faire découvrir Randodo</h3><p class="meta">Envoie le lien de l'appli à tes amis.</p>
       <div class="row"><button type="button" class="btn small main" id="s-share">Partager Randodo</button></div></div>

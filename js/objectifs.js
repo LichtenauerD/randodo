@@ -71,7 +71,7 @@ export function checkGradeUp() {
   box.innerHTML = `<div class="gu-card" role="dialog" aria-live="polite">
     <div class="gu-art">${dodoSvg(g.dodo, 110)}</div>
     <h2>${MASCOT} a évolué !</h2>
-    <p>Tu es maintenant <b>${esc(g.name)}</b>. ${esc(DODO_STAGES[g.dodo])}, et ${MASCOT} n'en revient pas.</p>
+    <p>Tu es maintenant <b>${esc(g.name)}</b>. ${esc(DODO_STAGES[g.dodo])}, et ${MASCOT} le dodo n'en revient pas.</p>
     <button type="button" class="btn main">Bravo ${MASCOT}</button></div>`;
   document.body.appendChild(box);
   if (navigator.vibrate) navigator.vibrate([60, 60, 120]);
@@ -88,11 +88,11 @@ export function renderObjectifs(root) {
   const sec = SECTORS.map((s) => { const l = placesOf(s.id); const d = doneCount(l); return { ...s, total: l.length, done: d, pct: l.length ? d / l.length : 0 }; });
   root.innerHTML = `<div class="obj">
     <section class="grade-card">
-      ${dodoSvg(g.dodo, 76)}
+      <figure class="gc-dodo">${dodoSvg(g.dodo, 76)}<figcaption>${MASCOT} le dodo</figcaption></figure>
       <div class="gc-text"><span class="gc-lab">Ton grade</span><h2>${esc(g.name)}</h2>
         <p class="gc-n"><b>${n}</b> lieu${n > 1 ? 'x' : ''} fait${n > 1 ? 's' : ''} sur ${all.length}</p>
         <div class="gc-bar"><i style="width:${Math.round(g.pct * 100)}%"></i></div>
-        <p class="gc-next">${g.next ? `Encore <b>${g.left}</b> pour devenir <b>${esc(g.next.name)}</b>` : 'Grade le plus haut atteint. Le dodo vole.'}</p></div>
+        <p class="gc-next">${g.next ? `Encore <b>${g.left}</b> pour devenir <b>${esc(g.next.name)}</b>` : 'Grade le plus haut atteint. Didou le dodo vole !'}</p></div>
     </section>
     <div class="sectors" role="tablist">${sec.map((s) => `<button type="button" role="tab" class="sec${s.id === sector ? ' on' : ''}" data-s="${s.id}">${climbSvg(s.pct, 92, 54)}<b>${s.name}</b><span>${s.done} / ${s.total}</span></button>`).join('')}</div>
     <section class="geo-box"><div id="geo-map" class="geo-map"></div>
@@ -233,7 +233,7 @@ function openHelp() {
     <p class="note">Chaque lieu fait compte, qu'il soit coché ici ou noté dans ton historique. Le dodo grandit avec toi.</p>
     <ol class="grades">${GRADES.map((g, i) => `<li>${dodoSvg(g.dodo, 40)}<span><b>${esc(g.name)}</b><small>${g.at === 0 ? 'Au départ' : `À partir de ${g.at} lieu${g.at > 1 ? 'x' : ''}`} · ${DODO_STAGES[i]}</small></span></li>`).join('')}</ol>
     <div class="help-climb">${climbSvg(0, 220, 154)}</div>
-    <p class="note">Par secteur, le dodo gravit sa montagne à mesure que tu fais les lieux ; il plante son drapeau quand tout est fait. Sur la carte, chaque intercommunalité où tu as fait un lieu passe en rouge : ton territoire.</p>
+    <p class="note">Par secteur, Didou le dodo gravit sa montagne à mesure que tu fais les lieux ; il plante son drapeau quand tout est fait. Sur la carte, chaque intercommunalité où tu as fait un lieu passe en rouge : ton territoire.</p>
     <div class="foot"><button type="button" class="btn main" id="gh-ok">Compris</button></div></div>`;
   m.hidden = false;
   const stop = animateClimber(m.querySelector('.help-climb svg'));

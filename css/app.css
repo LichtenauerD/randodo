@@ -622,3 +622,4 @@ ol.grades li span { display: flex; flex-direction: column; } ol.grades small { c
 .gu-card p { margin: 0 0 16px; line-height: 1.45; }
 .gu-card .btn { width: 100%; }
 @keyframes guPop { 0% { transform: scale(.3) rotate(-12deg); opacity: 0; } 60% { transform: scale(1.12) rotate(4deg); opacity: 1; } 100% { transform: scale(1) rotate(0); } }
+.gc-dodo { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; flex: none; } .gc-dodo figcaption { font: 600 .74rem var(--sign); color: var(--sapin); white-space: nowrap; }

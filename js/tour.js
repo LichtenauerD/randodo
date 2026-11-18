@@ -40,7 +40,7 @@ let T = null;
 const STEPS = [
   {
     id: 'hello', center: true,
-    dodo: `Salut, moi c'est ${MASCOT} ! Je ne vole pas, mais je connais tous les sentiers.`,
+    dodo: `Salut, moi c'est ${MASCOT} le dodo ! Je ne vole pas, mais je connais tous les sentiers.`,
     text: 'Petit tour de l\'appli ? Deux minutes, promis.',
     next: 'C\'est parti', skip: 'Plus tard',
   },
@@ -128,7 +128,7 @@ const STEPS = [
   {
     id: 'bye', center: true, before: () => navigate('accueil'),
     text: 'C\'est tout ! La visite se rejoue dans Réglages.',
-    dodo: 'Allez, on y va ? À pied, bien sûr.',
+    dodo: `Allez, on y va ? À pied, bien sûr. Signé ${MASCOT} le dodo.`,
     next: 'Terminer',
   },
 ];
