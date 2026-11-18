@@ -3,7 +3,7 @@ import { SITES } from './places.js';
 import { TYPES } from './config.js';
 import { store, bus } from './state.js';
 import { glyph } from './map.js';
-import { esc, kv, settings, slugOf, toast } from './util.js';
+import { esc, kv, settings, slugOf, toast, modalChrome } from './util.js';
 import { prefetchPlace } from './hikes.js';
 import { GRADES, DODO_STAGES, gradeOf, dodoSvg, climbSvg, placeClimbers, animateClimber, MASCOT } from './grades.js';
 
@@ -240,4 +240,5 @@ function openHelp() {
   const close = () => { stop(); m.hidden = true; m.innerHTML = ''; };
   m.onclick = (e) => { if (e.target === m) close(); };
   m.querySelector('#gh-ok').onclick = close;
+  modalChrome(m.firstChild, close);
 }

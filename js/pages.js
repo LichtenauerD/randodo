@@ -13,7 +13,7 @@ import { fromGpx } from './hikes.js';
 import { parseGpx, shareGpx } from './gpx.js';
 import { overpassState } from './overpass.js';
 import { renderHome, setHomeNavigator, GROUPS } from './home.js';
-import { kv, settings, esc, fmtKm, fmtDur, toast, uid, fetchJson, slugOf } from './util.js';
+import { kv, settings, esc, fmtKm, fmtDur, toast, uid, fetchJson, slugOf, modalChrome } from './util.js';
 import { SITES } from './places.js';
 
 const $ = (s, r = document) => r.querySelector(s);
@@ -26,11 +26,12 @@ export function setNavigator(fn) { goTab = fn; setHomeNavigator(fn); }
 export const navigate = (t) => goTab && goTab(t);
 
 // ---------- Fenêtre ----------
-export function openModal(html) {
+export function openModal(html, opts = {}) {
   const m = document.getElementById('modal');
   m.innerHTML = `<div class="box" role="dialog" aria-modal="true">${html}</div>`;
   m.hidden = false;
   m.onclick = (e) => { if (e.target === m) closeModal(); };
+  if (opts.close !== false) modalChrome(m.firstChild, () => { m.classList.remove('over'); closeModal(); });
   return m.firstChild;
 }
 export function closeModal() { const m = document.getElementById('modal'); m.hidden = true; m.innerHTML = ''; }
@@ -126,7 +127,7 @@ export function askName() {
   const box = openModal(`<div class="welcome"><img src="icons/icon-192.png" alt="" width="84" height="84"><h2>Bienvenue sur Randodo</h2><p class="motto">Le dodo ne vole pas. Il marche. Et toi ?</p>
     <p>Moi, c'est Didou le dodo : je t'accompagne sur les sentiers. Et toi, c'est quoi ton prénom ? Il sert à signer tes randos quand tu les partages.</p>
     <label class="field"><input type="text" id="wn-name" placeholder="Ton prénom" maxlength="24" autocomplete="given-name" autocapitalize="words"></label>
-    <button type="button" class="btn main" id="wn-ok" style="width:100%;margin-top:14px">C'est parti</button></div>`);
+    <button type="button" class="btn main" id="wn-ok" style="width:100%;margin-top:14px">C'est parti</button></div>`, { close: false });
   document.getElementById('modal').onclick = null; // on ne ferme pas cette fenêtre en touchant à côté
   $('#wn-name', box).oninput = (e) => markField(e.target, '');
   const ok = async () => {
@@ -169,7 +170,7 @@ function askOtherName() {
   return new Promise((resolve) => {
     const box = openModal(`<h2>Ce prénom est déjà pris</h2><p class="meta">Un autre membre de la communauté s'appelle déjà ${esc(settings.get('pseudo', ''))}. Choisis un prénom ou un surnom différent, par exemple avec l'initiale de ton nom.</p>
       <label class="field"><input type="text" id="on-name" maxlength="24" value="${esc(settings.get('pseudo', ''))}" autocapitalize="words"></label>
-      <div class="foot"><button type="button" class="btn" id="on-no">Annuler</button><button type="button" class="btn main" id="on-ok">Valider</button></div>`);
+      <div class="foot"><button type="button" class="btn" id="on-no">Annuler</button><button type="button" class="btn main" id="on-ok">Valider</button></div>`, { close: false });
     document.getElementById('modal').classList.add('over');
     const input = $('#on-name', box);
     markField(input, TAKEN);
@@ -280,7 +281,7 @@ export function askCommunity(after) {
     <p>Tes randos et tes lieux cochés seront visibles par les autres membres, et tu verras les leurs, avec le profil de chacun.</p>
     <p class="note">Ou alors, tu randonnes en solo : ni ton prénom ni tes sorties ne quittent ton téléphone. Tu pourras changer d'avis dans Réglages.</p>
     <button type="button" class="btn main" id="cm-yes" style="width:100%;margin-top:14px">Je rejoins la communauté</button>
-    <button type="button" class="btn" id="cm-no" style="width:100%;margin-top:8px">Je reste en solo</button></div>`);
+    <button type="button" class="btn" id="cm-no" style="width:100%;margin-top:8px">Je reste en solo</button></div>`, { close: false });
   document.getElementById('modal').onclick = null;
   $('#cm-yes', box).onclick = async () => { closeModal(); await joinCommunity(); if (after) after(); };
   $('#cm-no', box).onclick = () => { closeModal(); soloCommunity(); if (after) after(); };
@@ -466,7 +467,7 @@ async function renderCommunity(body) {
     const crew = members.filter((m) => m.who).sort((a, b) => (b.lieux || 0) - (a.lieux || 0) || a.who.localeCompare(b.who));
     const mineSet = myDoneSlugs();
     const crewHtml = crew.map((m) => {
-      const g = gradeOf(m.lieux || 0), self = me && m.pid === me;
+      const g = gradeOf(m.lieux || 0), self = isSelf(m, me);
       const common = self ? 0 : faitsOf(m).filter((k) => mineSet.has(k)).length;
       const tag = self ? '<em class="mate-me">toi</em>' : common ? `<em class="mate-common">${common} lieu${common > 1 ? 'x' : ''} en commun</em>` : '';
       return `<button type="button" class="mate" data-pid="${esc(m.pid || '')}" data-who="${esc(m.who)}">${dodoSvg(g.dodo, 42)}<span><b>${esc(m.who)}</b><small>${esc(m.grade || g.name)} · ${m.lieux || 0} lieu${(m.lieux || 0) > 1 ? 'x' : ''}</small>${tag}</span><i class="mate-go">›</i></button>`;
@@ -493,6 +494,8 @@ async function renderCommunity(body) {
   }
 }
 
+// C'est moi : même empreinte d'appareil, ou même prénom (les prénoms sont uniques dans la communauté).
+const isSelf = (m, me) => !!((me && m.pid && m.pid === me) || normName(m.who) === normName(settings.get('pseudo', '')));
 const SITE_BY_SLUG = new Map(SITES.map((x) => [slugOf(x.name), x]));
 const faitsOf = (m) => String(m.faits || '').split(',').map((k) => k.trim()).filter((k) => SITE_BY_SLUG.has(k));
 const myDoneSlugs = () => new Set(SITES.filter((p) => store.isDone(p)).map((p) => slugOf(p.name)));
@@ -513,7 +516,7 @@ function placesByGroup(places, common) {
 // Profil d'un membre : progression par secteur, randos partagées, lieux faits (en commun en vert).
 function openProfile(m, entries, me) {
   if (!m) return;
-  const g = gradeOf(m.lieux || 0), self = me && m.pid === me;
+  const g = gradeOf(m.lieux || 0), self = isSelf(m, me);
   const mine = entries.filter((e) => (m.pid && e.pid ? e.pid === m.pid : e.who === m.who));
   const places = faitsOf(m).map((k) => SITE_BY_SLUG.get(k)).sort((a, b) => a.name.localeCompare(b.name, 'fr'));
   const mySet = self ? new Set() : myDoneSlugs();
@@ -531,12 +534,24 @@ function openProfile(m, entries, me) {
     <h3>Ses randos</h3>
     ${mine.map((e, i) => `<div class="pf-row" data-i="${i}"><b>${lvDot(e.level)}${esc(e.placeName)}</b><small>${frDate(e.date)}${e.km ? ', ' + String(Math.round(e.km * 10) / 10).replace('.', ',') + ' km' : ''}${e.rating ? ', ' + e.rating + '/5' : ''}</small>${e.note ? `<p>${esc(e.note)}</p>` : ''}${e.lat != null ? '<button type="button" class="btn small" data-a="map">Voir sur la carte</button>' : ''}</div>`).join('') || '<p class="meta">Aucune rando partagée pour l\'instant.</p>'}
     ${places.length ? `<h3>Ses lieux cochés</h3>${common.size ? `<p class="pf-legend"><span class="pf-pill common">✓ en vert</span> ${common.size} lieu${common.size > 1 ? 'x' : ''} que tu as fait${common.size > 1 ? 's' : ''} aussi</p>` : ''}${placesByGroup(places, common)}` : ''}
-    <div class="foot"><button type="button" class="btn main" id="pf-close">Fermer</button></div></div>`);
+    <button type="button" class="btn main pf-close" id="pf-close">Fermer</button></div>`);
   box.classList.add('tall');
   $('#pf-close', box).onclick = closeModal;
   box.querySelectorAll('[data-a=map]').forEach((b) => {
     b.onclick = () => { const e = mine[+b.closest('.pf-row').dataset.i]; closeModal(); goTab('carte'); openPlace({ id: 'g' + e.id, name: e.placeName, type: 'lieu', lat: e.lat, lon: e.lon, score: 0 }); };
   });
+}
+
+// Remise à zéro complète : départ de la communauté, puis effacement du stockage du téléphone.
+async function wipeAll() {
+  if (!confirm('Supprimer toutes tes données ? Ton historique, tes lieux cochés et tes traces seront effacés de ce téléphone, et tu seras retiré de la communauté. C\'est définitif. Pense à exporter une sauvegarde avant si tu veux les garder.')) return;
+  if (communityChoice() === 'oui' && groupAddress()) {
+    try { await post({ action: 'leave', owner: deviceKey() }); }
+    catch (err) { if (!confirm('Le groupe ne répond pas (' + err.message + '). Effacer quand même ce téléphone ? Tes données resteraient alors dans la communauté.')) return; }
+  }
+  try { for (const k of await kv.keys('')) await kv.del(k); } catch { /* on continue */ }
+  Object.keys(localStorage).filter((k) => k.startsWith('randodo.')).forEach((k) => localStorage.removeItem(k));
+  location.reload();
 }
 
 function renderSettings() {
@@ -564,6 +579,8 @@ function renderSettings() {
       <div class="row"><button type="button" class="btn small" id="s-export">Exporter</button><button type="button" class="btn small" id="s-import">Importer</button></div><input type="file" id="s-file" accept=".json,application/json" hidden></div>
     <div class="card"><h3>Diagnostic</h3><p class="meta">Vérifie en conditions réelles que chaque service répond.</p>
       <div class="row"><button type="button" class="btn small main" id="s-diag">Lancer le diagnostic</button><button type="button" class="btn small" id="s-demo">Démonstration du guidage</button></div><ul class="diag" id="diag" style="margin-top:8px"></ul></div>
+    <div class="card"><h3>Supprimer mes données</h3><p class="meta">Efface tout ce que l'appli garde sur ce téléphone (historique, lieux cochés, traces, envies, réglages) et te retire de la communauté. L'appli repart de zéro, avec le tutoriel.</p>
+      <div class="row"><button type="button" class="btn small danger" id="s-wipe">Supprimer mes données</button></div></div>
     <div class="card"><h3>Sources</h3><p class="meta">Lieux, sentiers, balisage et tracés : © contributeurs OpenStreetMap (ODbL). Altitudes : Copernicus DEM GLO-30 (© DLR, © Airbus, fourni par l'Union européenne et l'ESA). Occupation du sol : © ESA WorldCover 2021 (CC BY 4.0). Météo : Open-Meteo.com (CC BY 4.0). Photos : Wikimedia Commons et Wikipédia. Recherche de lieux : Photon. Temps de route : OSRM. Les « Circuits balisés » sont des itinéraires officiels, tels qu'ils sont enregistrés dans OpenStreetMap. Les « Boucles » sont assemblées par l'appli sur de vrais sentiers cartographiés, en privilégiant les chemins balisés ou bien décrits ; un bout de sentier peu décrit apparaît en pointillés orange. Ni l'un ni l'autre ne remplace ton jugement sur le terrain.</p>
       <p class="meta" style="margin-top:8px"><a href="mentions.html">Mentions légales et confidentialité</a></p>
       <p class="meta" style="margin-top:8px">Randodo ${VERSION}</p></div>
@@ -578,6 +595,7 @@ function renderSettings() {
     catch (err) { toast('Envoi impossible : ' + err.message, 5000); }
   };
   $('#s-tuto', p).onclick = () => startTour();
+  $('#s-wipe', p).onclick = () => wipeAll();
   if ($('#s-join', p)) $('#s-join', p).onclick = () => joinCommunity();
   if ($('#s-leave', p)) $('#s-leave', p).onclick = () => { if (confirm('Quitter la communauté ? Tes randos partagées et ta progression seront retirées du groupe. Rien n\'est effacé sur ton téléphone.')) leaveCommunity(); };
   $('#s-pseudo', p).oninput = (e) => markField(e.target, '');

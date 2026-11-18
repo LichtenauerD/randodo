@@ -234,3 +234,27 @@ export function toast(msg, ms = 3200) {
 export function slugOf(name) {
   return norm(name).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 }
+
+// Fenêtre du bas : croix en haut à gauche et glisser vers le bas pour fermer.
+export function modalChrome(box, close) {
+  const x = document.createElement('button');
+  x.type = 'button'; x.className = 'mx'; x.setAttribute('aria-label', 'Fermer');
+  x.innerHTML = '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+  x.onclick = close;
+  box.prepend(x);
+  box.classList.add('has-x');
+  let y0 = null, dy = 0;
+  const scroller = (t) => (t.closest && t.closest('.profile')) || box;
+  box.addEventListener('touchstart', (e) => { y0 = scroller(e.target).scrollTop <= 0 ? e.touches[0].clientY : null; dy = 0; }, { passive: true });
+  box.addEventListener('touchmove', (e) => {
+    if (y0 == null) return;
+    dy = e.touches[0].clientY - y0;
+    if (dy > 0) { box.style.transform = `translateY(${dy}px)`; box.style.transition = 'none'; if (e.cancelable) e.preventDefault(); } else { y0 = null; box.style.transform = ''; }
+  }, { passive: false });
+  box.addEventListener('touchend', () => {
+    if (y0 == null) return;
+    box.style.transition = 'transform .2s';
+    if (dy > 110) { box.style.transform = 'translateY(100%)'; setTimeout(close, 180); } else box.style.transform = '';
+    y0 = null;
+  });
+}

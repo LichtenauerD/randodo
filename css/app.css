@@ -637,8 +637,6 @@ button.mate { width: 100%; border: 0; text-align: left; font: inherit; color: in
 details.adv { margin-top: 10px; } details.adv summary { color: var(--gris); font-size: .88rem; cursor: pointer; }
 #modal .box.tall { height: 92%; display: flex; flex-direction: column; padding-bottom: 0; }
 #modal .box.tall .profile { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding-bottom: calc(20px + env(safe-area-inset-bottom)); }
-.profile .foot { position: sticky; bottom: 0; background: var(--papier); padding-top: 10px; }
-.profile .foot .btn { flex: 1; }
 .crew-count { display: inline-block; background: #e9ece8; border-radius: 12px; padding: 7px 12px; margin-bottom: 10px; font-size: .9rem; color: var(--encre); }
 .crew-count b { font-family: var(--sign); font-size: 1.05rem; margin-right: 3px; }
 .mate em { font-style: normal; font-size: .76rem; font-weight: 600; margin-top: 3px; align-self: flex-start; padding: 2px 8px; border-radius: 10px; }
@@ -662,3 +660,12 @@ details.adv { margin-top: 10px; } details.adv summary { color: var(--gris); font
 .field input.bad { border-color: #c23a2b !important; background: #fdf0ee !important; }
 .field-err { display: block; color: #c23a2b; font-size: .85rem; font-weight: 600; margin-top: 5px; }
 #modal.over { z-index: 2100; }
+#modal .box { position: relative; }
+#modal .mx { position: absolute; top: 12px; left: 12px; width: 34px; height: 34px; border-radius: 50%; background: rgba(20, 33, 27, 0.08); display: grid; place-items: center; z-index: 3; border: 0; color: var(--encre); }
+#modal .mx svg { width: 16px; height: 16px; stroke: currentColor; stroke-width: 2.4; fill: none; }
+#modal .box.has-x { padding-top: 54px; }
+#modal .box.has-x::before { content: ""; position: absolute; top: 7px; left: 50%; width: 38px; height: 4px; margin-left: -19px; border-radius: 2px; background: rgba(20, 33, 27, 0.18); }
+#modal .box.has-x.tall { padding-top: 0; }
+#modal .box.has-x.tall .profile { padding-top: 54px; }
+.pf-close { width: 100%; margin-top: 16px; }
+.danger { color: #b3261e !important; border-color: #e4b2ad !important; }
