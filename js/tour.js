@@ -4,7 +4,7 @@ import { SITES } from '../data/sites.js';
 import { store } from './state.js';
 import { settings } from './util.js';
 import { walkerSvg, dodoSvg, MASCOT } from './grades.js';
-import { navigate } from './pages.js';
+import { navigate, groupAddress, communityChoice, joinCommunity, soloCommunity, askCommunity } from './pages.js';
 import { openPlace, openHike, closeSheet } from './sheet.js';
 import { hikesFor } from './hikes.js';
 import { startGuide, stopGuide, isGuiding } from './guide.js';
@@ -124,6 +124,15 @@ const STEPS = [
     id: 'history', before: async () => { navigate('historique'); await wait(300); }, target: '#page', pad: -10,
     text: 'Toutes tes sorties, avec la date, la durée et tes notes.',
     dodo: 'Moi, je me souviens de tout. Sauf de l\'endroit où j\'ai garé la voiture.',
+  },
+  {
+    id: 'community', before: () => navigate('accueil'),
+    skipIf: () => !groupAddress() || communityChoice() !== '',
+    text: 'Rejoindre la communauté ? Tes randos et tes lieux cochés sont partagés avec les autres membres, et tu vois les leurs, profil par profil. Sinon, tu randonnes en solo et rien ne quitte ton téléphone. Ça se change dans Réglages.',
+    dodo: 'Tout seul on va plus vite, à plusieurs on va plus loin. Et on partage le goûter.',
+    next: 'Je rejoins', skip: 'Je reste en solo',
+    after: () => joinCommunity(),
+    onSkip: () => soloCommunity(),
   },
   {
     id: 'bye', center: true, before: () => navigate('accueil'),
@@ -251,6 +260,8 @@ function end(finished) {
   T = null;
   settings.set('tourDone', true);
   if (finished) navigate('accueil');
+  // Visite interrompue avant la question de la communauté : on la pose quand même.
+  if (!communityChoice() && groupAddress()) setTimeout(() => askCommunity(), 400);
 }
 
 export async function startTour() {
@@ -259,7 +270,11 @@ export async function startTour() {
   T = { i: 0, place, hike: null, hadSaved: false };
   T.root = build();
   T.root.querySelector('.tour-next').onclick = () => next();
-  T.root.querySelector('.tour-skip').onclick = () => end(T.i > 0);
+  T.root.querySelector('.tour-skip').onclick = () => {
+    // Étape à choix : le second bouton est une réponse, pas une sortie de la visite.
+    if (T.step && T.step.onSkip) { T.step.onSkip(); clearInterval(T.poll); show(T.i + 1); return; }
+    end(T.i > 0);
+  };
   T.onResize = () => { if (T && T.step) placeHole(T.el, T.step.pad != null ? T.step.pad : 8); };
   addEventListener('resize', T.onResize);
   document.addEventListener('scroll', T.onResize, true);
@@ -270,7 +285,8 @@ export async function startTour() {
 
 // Proposée une seule fois, après le prénom et le questionnaire du premier lancement.
 export function maybeTour() {
-  if (settings.get('tourDone', false) || T) return;
+  if (T) return;
+  if (settings.get('tourDone', false)) { if (!communityChoice() && groupAddress()) setTimeout(() => askCommunity(), 600); return; }
   setTimeout(() => startTour(), 500);
 }
 

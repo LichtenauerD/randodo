@@ -68,7 +68,7 @@ function membres_(classeur) {
   }
   const lignes = f.getDataRange().getValues();
   const liste = [];
-  for (let i = 1; i < lignes.length; i++) if (lignes[i][0]) liste.push({ who: String(lignes[i][0]), since: String(lignes[i][2]).slice(0, 10), grade: String(lignes[i][4] || ''), lieux: Number(lignes[i][5]) || 0, faits: String(lignes[i][6] || '') });
+  for (let i = 1; i < lignes.length; i++) if (lignes[i][0]) liste.push({ pid: pid_(String(lignes[i][1])), who: String(lignes[i][0]), since: String(lignes[i][2]).slice(0, 10), grade: String(lignes[i][4] || ''), lieux: Number(lignes[i][5]) || 0, faits: String(lignes[i][6] || '') });
   return { feuille: f, lignes: lignes, liste: liste };
 }
 function inscrire_(classeur, owner, who) {
@@ -82,6 +82,13 @@ function inscrire_(classeur, owner, who) {
     }
   }
   m.feuille.appendRow([who, owner, maintenant, maintenant]);
+}
+
+// Identifiant public d'un membre : une empreinte de son identifiant d'appareil, qui ne permet pas d'agir à sa place.
+function pid_(owner) {
+  if (!owner) return null;
+  const h = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, 'randodo:' + owner);
+  return h.slice(0, 6).map(function (b) { return ('0' + (b & 255).toString(16)).slice(-2); }).join('');
 }
 
 function reponse_(objet) {
@@ -113,6 +120,7 @@ function doGet() {
         if (typeof v === 'string' && v.charAt(0) === "'") v = v.slice(1);
         e[c] = v === '' ? null : v;
       });
+      e.pid = pid_(String(lignes[i][COLONNES.indexOf('owner')]));
       if (e.id) entries.push(e);
     }
     return reponse_({ ok: true, entries: entries, suggestions: suggestions_(classeur_()), members: membres_(classeur_()).liste });
@@ -150,6 +158,13 @@ function doPost(e) {
       const msg = texte_(d.message, 2000);
       if (!msg) return reponse_({ ok: false, error: 'message vide' });
       r.appendRow([new Date().toISOString(), texte_(d.who, 24), texte_(d.version, 12), texte_(d.screen, 80), msg, texte_(d.device, 200)]);
+      return reponse_({ ok: true });
+    }
+    if (d.action === 'leave') {
+      // Départ de la communauté : on retire ses randos partagées et sa ligne de membre.
+      for (let i = lignes.length - 1; i >= 1; i--) if (String(lignes[i][colOwner]) === owner) f.deleteRow(i + 1);
+      const m = membres_(classeur_());
+      for (let i = m.lignes.length - 1; i >= 1; i--) if (String(m.lignes[i][1]) === owner) m.feuille.deleteRow(i + 1);
       return reponse_({ ok: true });
     }
     if (d.action === 'join') {
