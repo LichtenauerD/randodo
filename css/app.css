@@ -669,3 +669,7 @@ details.adv { margin-top: 10px; } details.adv summary { color: var(--gris); font
 #modal .box.has-x.tall .profile { padding-top: 54px; }
 .pf-close { width: 100%; margin-top: 16px; }
 .danger { color: #b3261e !important; border-color: #e4b2ad !important; }
+@keyframes slide-l { from { transform: translateX(36px); opacity: .4; } to { transform: none; opacity: 1; } }
+@keyframes slide-r { from { transform: translateX(-36px); opacity: .4; } to { transform: none; opacity: 1; } }
+.page.slide-l { animation: slide-l .22s ease-out; } .page.slide-r { animation: slide-r .22s ease-out; }
+@media (prefers-reduced-motion: reduce) { .page.slide-l, .page.slide-r { animation: none; } }

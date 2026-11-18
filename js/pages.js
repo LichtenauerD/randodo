@@ -22,7 +22,57 @@ const LVC = { facile: 'var(--facile)', moyenne: 'var(--moyenne)', difficile: 'va
 let tab = 'carte';
 let histTab = 'mes';
 let goTab = () => {};
-export function setNavigator(fn) { goTab = fn; setHomeNavigator(fn); }
+export function setNavigator(fn) { goTab = fn; setHomeNavigator(fn); initSwipe(); }
+
+// ---------- Glisser à gauche ou à droite : sous-onglet voisin, puis onglet voisin ----------
+const SWIPE_TABS = ['accueil', 'objectifs', 'traces', 'historique', 'reglages']; // la carte garde ses gestes
+let swipeReady = false;
+function initSwipe() {
+  if (swipeReady) return;
+  swipeReady = true;
+  const el = page();
+  let x0 = 0, y0 = 0, t0 = 0, ok = false;
+  // Zones qui ont leurs propres gestes horizontaux : champs, curseurs, cartes, bandeaux qui défilent.
+  const blocked = (t) => {
+    for (let n = t; n && n !== el; n = n.parentElement) {
+      if (/^(INPUT|TEXTAREA|SELECT|CANVAS)$/.test(n.tagName) || n.classList.contains('leaflet-container') || n.hasAttribute('data-noswipe')) return true;
+      if (n.scrollWidth > n.clientWidth + 4 && /(auto|scroll)/.test(getComputedStyle(n).overflowX)) return true;
+    }
+    return false;
+  };
+  el.addEventListener('touchstart', (e) => {
+    ok = e.touches.length === 1 && !blocked(e.target) && document.getElementById('modal').hidden && !document.getElementById('tour');
+    if (!ok) return;
+    x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; t0 = Date.now();
+  }, { passive: true });
+  el.addEventListener('touchend', (e) => {
+    if (!ok) return;
+    ok = false;
+    const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0;
+    if (Math.abs(dx) < 70 || Math.abs(dx) < 1.8 * Math.abs(dy) || Date.now() - t0 > 700) return;
+    swipeTo(dx < 0 ? 1 : -1);
+  }, { passive: true });
+}
+function swipeTo(dir) {
+  const el = page();
+  const seg = tab === 'historique' ? el.querySelector('.seg') : null; // seuls les sous-onglets de l'Historique
+  if (seg) {
+    const btns = [...seg.querySelectorAll('button')], i = btns.findIndex((b) => b.classList.contains('on'));
+    const nb = btns[i + dir];
+    if (i >= 0 && nb) { nb.click(); slideIn(dir); return; }
+  }
+  const j = SWIPE_TABS.indexOf(tab), nt = SWIPE_TABS[j + dir];
+  if (j < 0 || !nt) return;
+  goTab(nt);
+  // En arrivant par la droite, on ouvre le premier sous-onglet ; par la gauche, le dernier.
+  if (nt === 'historique') { histTab = dir > 0 ? 'mes' : 'envies'; render(); }
+  slideIn(dir);
+}
+function slideIn(dir) {
+  const el = page();
+  el.classList.remove('slide-l', 'slide-r'); void el.offsetWidth;
+  el.classList.add(dir > 0 ? 'slide-l' : 'slide-r');
+}
 export const navigate = (t) => goTab && goTab(t);
 
 // ---------- Fenêtre ----------
