@@ -487,3 +487,4 @@ ol.grades li span { display: flex; flex-direction: column; } ol.grades small { c
 .credit a { color: inherit; }
 
 .ideal-line { margin: 2px 0 6px; }
+.start-box { margin: 10px 0; padding: 10px 12px; border-radius: 12px; background: #eef3ef; } .start-box p { margin: 0 0 8px; font-size: .9rem; line-height: 1.4; } .start-box .note { display: block; margin-top: 2px; }

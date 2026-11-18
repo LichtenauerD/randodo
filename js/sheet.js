@@ -36,6 +36,22 @@ function frame(inner) {
   document.getElementById('fabs').style.transform = 'translateY(-9999px)';
 }
 
+// Départ de la boucle, dit franchement : parking repéré ou pas, pour qu'il n'y ait pas de surprise en arrivant.
+const START = {
+  parking: ['Départ d\'un parking', 'Itinéraire jusqu\'au parking', ''],
+  gare: ['Départ de la gare', 'Itinéraire jusqu\'à la gare', 'En voiture, gare-toi sur le parking de la gare ou à proximité.'],
+  village: ['Départ du village', 'Itinéraire jusqu\'au village', 'Pas de parking repéré : gare-toi dans le village, sur une place autorisée.'],
+  route: ['Départ en bord de route', 'Itinéraire jusqu\'au départ', 'Pas de parking repéré : gare-toi en bord de forêt sans gêner, ou sur un parking proche.'],
+  balise: ['Départ du sentier balisé', 'Itinéraire jusqu\'au début du sentier', 'Pas de parking repéré : gare-toi en bord de forêt sans gêner, ou sur un parking proche.'],
+};
+function startHtml(h) {
+  if (!h.start || h.start.kind === 'import') return '';
+  const [what, btn, tip] = START[h.start.kind] || START.route;
+  const name = h.start.name ? ` : ${esc(h.start.name)}` : '';
+  const url = `https://www.google.com/maps/dir/?api=1&destination=${h.start.lat.toFixed(5)},${h.start.lon.toFixed(5)}`;
+  return `<div class="start-box"><p><b>${what}</b>${name}.${tip ? ` <span class="note">${tip}</span>` : ''}</p><a class="btn small wide" href="${url}" target="_blank" rel="noopener">${btn}</a></div>`;
+}
+
 export function closeSheet() {
   token++;
   const s = el();
@@ -246,9 +262,7 @@ export function openHike(h, ctx = {}) {
   const saved = store.isSaved(h.id);
   const back = ctx.place ? `<button type="button" class="more" id="back" style="margin:0 0 10px">Retour à ${esc(ctx.place.name)}</button>` : '';
   const warns = warnsOf(h);
-  // Le départ de la boucle : un parking, une gare ou un bord de route ; pour un circuit balisé, son premier point.
-  const startTxt = h.start && h.start.kind !== 'import'
-    ? `<p class="note">Départ : ${esc(h.start.name || (h.start.kind === 'parking' ? 'parking' : h.start.kind === 'gare' ? 'gare' : h.start.kind === 'balise' ? 'début du circuit balisé' : 'bord de route'))}. <a href="https://www.google.com/maps/dir/?api=1&destination=${h.start.lat.toFixed(5)},${h.start.lon.toFixed(5)}" target="_blank" rel="noopener">Itinéraire jusqu'au départ</a></p>` : '';
+  const startTxt = startHtml(h);
   const wmt = h.relId ? `<a class="btn small wide" href="${CONFIG.waymarkedGpx.replace('{id}', h.relId)}" target="_blank" rel="noopener">Fiche officielle du circuit (Waymarked Trails)</a>` : '';
   const site = h.website ? `<a class="btn small wide" href="${esc(h.website)}" target="_blank" rel="noopener">Page officielle du circuit</a>` : '';
   frame(`${back}${signHtml(h, ' sel')}

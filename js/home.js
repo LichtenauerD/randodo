@@ -3,7 +3,7 @@ import { CONFIG, TYPES } from './config.js';
 import { SITES, imageOf, fetchImages, searchRemote } from './places.js';
 import { store, want, saveWant } from './state.js';
 import { openPlace } from './sheet.js';
-import { prefetchPlace } from './hikes.js';
+import { prefetchPlace, hikesFor } from './hikes.js';
 import { glyph } from './map.js';
 import { kv, settings, dist, esc, fetchJson, toast, fmtKm, slugOf } from './util.js';
 import { AUDIENCES, idealPlace, idealLabel } from './ideal.js';
@@ -64,14 +64,11 @@ function locateMe() {
 }
 
 // ---------- Suggestions de la semaine (tirées de la sélection, renouvelées chaque lundi) ----------
-function weeklyPicks(origin, idx = {}) {
+function weeklyPicks(origin) {
   const month = new Date().getMonth() + 1;
   const winter = month >= 11 || month <= 4;
   const maxMin = settings.get('search', {}).minutes || 120;
-  // Seulement des lieux dont les randos sont déjà calculées : la première impression doit être immédiate.
-  const ready = (s) => idx[slugOf(s.name)] && idx[slugOf(s.name)].length;
   let pool = SITES.filter((s) => !store.isDone(s) && !(winter && HIGH.has(s.name)));
-  if (pool.some(ready)) pool = pool.filter(ready);
   if (origin) pool = pool.map((s) => ({ s, min: estMinutes(dist([origin.lat, origin.lon], [s.lat, s.lon]) / 1000) })).filter((x) => x.min <= Math.max(maxMin, 90)).map((x) => Object.assign(x.s, { _min: x.min }));
   const rnd = seeded(isoWeek());
   const shuffled = pool.map((s) => [rnd(), s]).sort((a, b) => a[0] - b[0]).map((x) => x[1]);
@@ -79,6 +76,12 @@ function weeklyPicks(origin, idx = {}) {
   for (const s of shuffled) { if (out.length >= 4) break; if (types.has(s.type)) continue; types.add(s.type); out.push(s); }
   for (const s of shuffled) { if (out.length >= 4) break; if (!out.includes(s)) out.push(s); }
   return { picks: out, winter };
+}
+
+async function warmPicks(picks) {
+  for (const p of picks) {
+    try { if (!(await prefetchPlace(p))) await hikesFor(p); } catch { /* lieu suivant */ }
+  }
 }
 
 function thumb(p) {
@@ -273,7 +276,7 @@ function mineHtml() {
 export async function renderHome(el) {
   host = el;
   const origin = getOrigin();
-  const { picks } = weeklyPicks(origin, await hikeIndex());
+  const { picks } = weeklyPicks(origin);
   const web = await webIdeas(false);
   const name = settings.get('pseudo', '').trim();
   el.innerHTML = `<div class="home">
@@ -288,8 +291,9 @@ export async function renderHome(el) {
   bindFinder();
   if ($('#hm-hist', el)) $('#hm-hist', el).onclick = () => goTab('historique');
   bindPlaces($('#hm-picks', el), picks);
-  // Randos des idées de la semaine rangées sur le téléphone dès l'accueil : fiche instantanée, même hors réseau.
-  picks.forEach((p) => prefetchPlace(p).catch(() => {}));
+  // Idées de la semaine rangées sur le téléphone dès l'accueil : randos précalculées si elles existent,
+  // sinon calculées en arrière-plan une fois pour toutes. La fiche s'ouvre ensuite sans attente.
+  warmPicks(picks);
   bindWeb(web);
   if (lastSearch) paintResults();
   fetchImages(picks, () => { if (host === el && !el.hidden && $('#hm-picks', el)) { $('#hm-picks', el).innerHTML = picksHtml(picks); bindPlaces($('#hm-picks', el), picks); } });
