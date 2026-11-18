@@ -5,6 +5,13 @@ import { closeSheet } from './sheet.js';
 import { openLogForm } from './pages.js';
 import { upAfter } from './elev.js';
 import { cumulative, dist, projector, fmtKm, fmtM, fmtDur, esc, toast } from './util.js';
+import { slopeRuns, slopeProfileSvg, upcoming, SLOPE } from './slope.js';
+import { symHtml, symName, turnText } from './sheet.js';
+
+// Flèche de direction : angle par consigne.
+const ARROW = { G: -90, D: 90, LG: -45, LD: 45, TD: 0, DG: -150, DD: 150 };
+const arrowSvg = (code) => `<svg viewBox="0 0 40 40" class="turn-arrow" style="transform:rotate(${ARROW[code] || 0}deg)" aria-hidden="true"><path d="M20 4l11 13h-7v19h-8V17H9z" fill="currentColor"/></svg>`;
+const clock = (ms) => { const s = Math.floor(ms / 1000), h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), x = s % 60; return (h ? h + ':' + String(m).padStart(2, '0') : String(m)) + ':' + String(x).padStart(2, '0'); };
 
 let g = null;
 const hud = () => document.getElementById('hud');
@@ -110,12 +117,71 @@ function onPos(lat, lon, acc) {
   document.getElementById('hud-up').textContent = upLeft === null ? '—' : upLeft;
   document.getElementById('hud-eta').textContent = fmtDur((g.hike.minutes || 0) * (left / total));
   document.getElementById('hud-fill').style.width = Math.round((g.along / total) * 100) + '%';
+  live();
   if (left < 40 && g.walked > total * 0.5 && !g.arrived) {
     g.arrived = true;
     alertBox('Arrivée. Tu peux terminer et noter la rando.', 'info');
     beep();
   }
   if (g.follow) map.panTo(p, { animate: true, duration: 0.5 });
+}
+
+// Panneau du bas et consigne d'intersection : recalculés à chaque position.
+function live() {
+  if (!g) return;
+  const along = g.along;
+  // Profil coloré, position marquée.
+  const pr = document.getElementById('hud-prof');
+  if (pr && g.hike.prof) {
+    const bucket = Math.round(along / 25);
+    if (bucket !== g.profBucket) { g.profBucket = bucket; pr.innerHTML = slopeProfileSvg(g.hike.prof, { pos: along, height: 58, cls: 'hud-profile' }); }
+    const u = upcoming(g.runs, along);
+    document.getElementById('hud-now').innerHTML = u.now ? `<i style="background:${SLOPE[u.cls].color}"></i>Maintenant : ${esc(u.now)}` : '';
+    document.getElementById('hud-next').innerHTML = u.next ? `<i style="background:${SLOPE[u.nextCls].color}"></i>Ensuite : ${esc(u.next)}` : '';
+  }
+  // Balisage en cours et suivant.
+  const mk = document.getElementById('hud-mark');
+  if (mk) {
+    const marks = g.hike.marks || [];
+    const i = marks.findIndex(([a, b]) => along >= a && along < b);
+    const m = marks[i];
+    if (!m) mk.innerHTML = '';
+    else {
+      const left = m[1] - along, nx = marks[i + 1];
+      const lenTxt = left >= 1000 ? fmtKm(left) : fmtM(Math.max(10, Math.round(left / 10) * 10));
+      const then = nx ? (nx[2] ? `, puis ${symName(nx[2])}` : ', puis plus de balisage') : '';
+      mk.innerHTML = m[2] ? `${symHtml(m[2])}<span>Suis <b>${symName(m[2])}</b> encore ${lenTxt}${then}</span>` : `<span class="sym rb-none"></span><span>Pas de balisage encore ${lenTxt}${then}</span>`;
+    }
+  }
+  // Prochaine intersection : affichée à moins de 250 m, signal à 60 m.
+  const tc = document.getElementById('hud-turn');
+  if (tc) {
+    const next = g.started && !g.off ? (g.hike.turns || []).find(([at]) => at > along - 8) : null;
+    const d = next ? next[0] - along : Infinity;
+    if (!next || d > 250) { tc.hidden = true; }
+    else {
+      tc.hidden = false;
+      const txt = turnText(next[1]);
+      tc.innerHTML = `${arrowSvg(next[1])}<div><b>${d < 20 ? txt.charAt(0).toUpperCase() + txt.slice(1) : 'Dans ' + fmtM(Math.max(10, Math.round(d / 10) * 10))}</b><span>${d < 20 ? 'maintenant' : txt}</span></div>`;
+      if (d < 60 && g.warned !== next[0]) { g.warned = next[0]; if (navigator.vibrate) navigator.vibrate(120); }
+    }
+  }
+  place();
+}
+
+// L'alerte se place sous le bandeau du haut, quelle que soit sa hauteur.
+function place() {
+  const top = document.querySelector('.hud-top'), a = document.getElementById('hud-alert');
+  if (top && a) a.style.top = (top.getBoundingClientRect().bottom + 8) + 'px';
+}
+
+function tickClock() {
+  if (!g) return;
+  const now = Date.now();
+  if (!g.paused) g.elapsed += now - g.tick;
+  g.tick = now;
+  const c = document.getElementById('hud-clock');
+  if (c) c.textContent = clock(g.elapsed);
 }
 
 async function wake() {
@@ -129,24 +195,33 @@ export function startGuide(h, opts = {}) {
   if (g) stopGuide(false);
   closeSheet();
   document.querySelector('#page').hidden = true;
-  g = { hike: h, pts: h.pts, cum: cumulative(h.pts), along: 0, walked: 0, track: [], last: null, off: false, offCount: 0, started: false, arrived: false, follow: true, paused: false, t0: Date.now(), sim: !!opts.sim };
+  g = { hike: h, pts: h.pts, cum: cumulative(h.pts), along: 0, walked: 0, track: [], last: null, off: false, offCount: 0, started: false, arrived: false, follow: true, paused: false, t0: Date.now(), sim: !!opts.sim,
+    elapsed: 0, tick: Date.now(), runs: slopeRuns(h.prof), profBucket: -1, warned: null };
   try { g.audio = new (window.AudioContext || window.webkitAudioContext)(); } catch { g.audio = null; }
   document.body.classList.add('guiding');
   setMarkersVisible(false);
   map.invalidateSize();
-  showTrace(h, { corridor: true, pad: { top: 150, bottom: 90 } });
+  showTrace(h, { corridor: true, pad: { top: 170, bottom: 250 } });
   const total = g.cum[g.cum.length - 1];
   hud().hidden = false;
   hud().innerHTML = `<div class="hud-top">
       <p class="name">${esc(h.title)}</p>
       <div class="row">
+        <div><b id="hud-clock">0:00</b><span>chrono</span></div>
         <div><b id="hud-left">${fmtKm(total).replace(' km', '')}</b><span>km restants</span></div>
         <div><b id="hud-up">${h.up == null ? '—' : h.up}</b><span>m à monter</span></div>
-        <div><b id="hud-eta">${fmtDur(h.minutes || 0)}</b><span>de marche</span></div>
+        <div><b id="hud-eta">${fmtDur(h.minutes || 0)}</b><span>encore</span></div>
       </div>
       <div class="hud-bar"><i id="hud-fill"></i></div>
+      <div id="hud-turn" class="hud-turn" hidden></div>
     </div>
     <div id="hud-alert" class="hud-alert info" hidden></div>
+    <div class="hud-panel">
+      <div id="hud-mark" class="hud-mark"></div>
+      <div id="hud-prof"></div>
+      <p id="hud-now" class="hud-run"></p>
+      <p id="hud-next" class="hud-run soft"></p>
+    </div>
     <div class="hud-bottom">
       <button type="button" class="btn" id="hud-pause">Pause</button>
       <button type="button" class="btn go" id="hud-stop">Terminer</button>
@@ -157,6 +232,8 @@ export function startGuide(h, opts = {}) {
     alertBox(g.paused ? 'Guidage en pause.' : '', 'info');
   };
   document.getElementById('hud-stop').onclick = () => finish();
+  g.clock = setInterval(tickClock, 1000);
+  live();
   map.on('dragstart', unfollow);
   document.addEventListener('visibilitychange', onVisible);
   wake();
@@ -200,6 +277,7 @@ export function stopGuide(restoreUi = true) {
   if (!g) return;
   if (g.watch != null) navigator.geolocation.clearWatch(g.watch);
   if (g.timer) clearInterval(g.timer);
+  if (g.clock) clearInterval(g.clock);
   if (g.wake) g.wake.release().catch(() => {});
   if (g.audio) g.audio.close().catch(() => {});
   map.off('dragstart', unfollow);
@@ -211,7 +289,8 @@ export function stopGuide(restoreUi = true) {
 }
 
 function finish() {
-  const done = { hike: g.hike, walked: g.walked, minutes: Math.round((Date.now() - g.t0) / 60000), ratio: g.along / g.cum[g.cum.length - 1] };
+  tickClock();
+  const done = { hike: g.hike, walked: g.walked, minutes: Math.round(g.elapsed / 60000), ratio: g.along / g.cum[g.cum.length - 1] };
   if (done.ratio < 0.15 && done.walked < 300) {
     stopGuide();
     toast('Guidage arrêté.');

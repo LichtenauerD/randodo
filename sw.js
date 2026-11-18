@@ -1,11 +1,11 @@
 // Mode hors ligne de Randodo. Le stockage de cache est commun à toutes les applis du même site GitHub Pages :
 // seuls les caches préfixés « randodo- » sont touchés.
 // L'appli elle-même est mise en cache, les tuiles déjà vues aussi (jamais téléchargées d'avance).
-const VERSION = 'randodo-1.6.7';
+const VERSION = 'randodo-1.7.0';
 const SHELL = [
   './', 'index.html', 'manifest.webmanifest', 'css/app.css',
   'js/app.js', 'js/config.js', 'js/util.js', 'js/state.js', 'js/overpass.js', 'js/places.js', 'js/router.js',
-  'js/elev.js', 'js/gpx.js', 'js/hikes.js', 'js/map.js', 'js/sheet.js', 'js/guide.js', 'js/pages.js', 'js/home.js', 'js/weather.js', 'js/grades.js', 'js/objectifs.js', 'js/onboard.js', 'js/ideal.js', 'data/sites.js', 'data/photos.js', 'data/popularity.js',
+  'js/elev.js', 'js/gpx.js', 'js/hikes.js', 'js/map.js', 'js/sheet.js', 'js/guide.js', 'js/pages.js', 'js/home.js', 'js/weather.js', 'js/grades.js', 'js/objectifs.js', 'js/onboard.js', 'js/ideal.js', 'js/slope.js', 'js/share.js', 'js/tour.js', 'data/sites.js', 'data/photos.js', 'data/popularity.js',
   'vendor/leaflet/leaflet.js', 'vendor/leaflet/leaflet.css',
   'vendor/leaflet/images/marker-icon.png', 'vendor/leaflet/images/marker-icon-2x.png', 'vendor/leaflet/images/marker-shadow.png',
   'vendor/fonts/bsc-500.woff2', 'vendor/fonts/bsc-600.woff2', 'vendor/fonts/bsc-700.woff2',

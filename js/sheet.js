@@ -1,4 +1,5 @@
 // Fiche d'un lieu et fiche d'une randonnée (feuille basse).
+import { slopeProfileSvg, slopeLegend } from './slope.js';
 import { idealHike, idealLabel, isHidden } from './ideal.js';
 import { weatherHtml, bindWeather } from './weather.js';
 import { CONFIG, TYPES } from './config.js';
@@ -8,8 +9,9 @@ import { store, want, fits, wantActive, bus } from './state.js';
 import { showTrace, clearTrace, glyph, focus, map } from './map.js';
 import { shareGpx } from './gpx.js';
 import { startGuide } from './guide.js';
+import { shareHike } from './share.js';
 import { openLogForm } from './pages.js';
-import { esc, fmtKm, fmtDur, toast, settings } from './util.js';
+import { esc, fmtKm, fmtM, fmtDur, toast, settings, slugOf } from './util.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const el = () => document.getElementById('sheet');
@@ -23,6 +25,7 @@ const IC = {
   go: '<svg viewBox="0 0 24 24"><path d="M12 3l7 18-7-4-7 4 7-18z"/></svg>',
   down: '<svg viewBox="0 0 24 24"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></svg>',
   save: '<svg viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4-6 4V3z"/></svg>',
+  share: '<svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="2.6"/><circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="19" r="2.6"/><path d="M8.3 10.8l7.4-4.3M8.3 13.2l7.4 4.3"/></svg>',
 };
 const LV = { facile: 'Facile', moyenne: 'Moyenne', difficile: 'Difficile' };
 
@@ -134,6 +137,15 @@ export function symHtml(symbol) {
   return `<span class="sym" style="background:${bg}"><i style="${st}"></i></span>`;
 }
 
+// Lien partagé : ouvre le lieu puis la rando demandée (numéro dans la liste du lieu).
+export async function openShared(place, n) {
+  await openPlace(place);
+  const list = current.data && current.data.hikes;
+  if (!n || !list || !list.length) return;
+  const h = list.find((x) => x.id === `${slugOf(place.name)}-${n}`) || list[n - 1];
+  if (h) openHike(h, { place });
+}
+
 // ---------- Fiche d'un lieu ----------
 export async function openPlace(place, opts = {}) {
   const my = ++token;
@@ -231,15 +243,46 @@ function renderHikes() {
 // ---------- Fiche d'une randonnée ----------
 export function profileSvg(prof) {
   if (!prof || prof.length < 3) return '';
-  const W = 320, H = 74, total = prof[prof.length - 1][0] || 1;
   let lo = Infinity, hi = -Infinity;
   for (const [, e] of prof) { if (e < lo) lo = e; if (e > hi) hi = e; }
-  const span = Math.max(hi - lo, 40);
-  const x = (d) => (d / total) * W, y = (e) => H - 14 - ((e - lo) / span) * (H - 26);
-  const line = prof.map(([d, e], i) => (i ? 'L' : 'M') + x(d).toFixed(1) + ' ' + y(e).toFixed(1)).join('');
-  return `<svg class="profile" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Profil altimétrique, de ${Math.round(lo)} à ${Math.round(hi)} mètres">
-    <path d="${line}L${W} ${H}L0 ${H}Z" fill="rgba(47,107,79,.18)" stroke="none"/><path d="${line}" stroke="#2f6b4f" stroke-width="2" vector-effect="non-scaling-stroke"/>
-  </svg><p class="note" style="display:flex;justify-content:space-between"><span>Point bas ${Math.round(lo)} m</span><span>Point haut ${Math.round(hi)} m</span></p>`;
+  return slopeProfileSvg(prof) + slopeLegend() + `<p class="note" style="display:flex;justify-content:space-between"><span>Point bas ${Math.round(lo)} m</span><span>Point haut ${Math.round(hi)} m</span></p>`;
+}
+
+// Nom d'un balisage en toutes lettres : « le rectangle rouge », « l'anneau bleu ».
+const SHAPES = { bar: ['rectangle', 'm'], rectangle: ['rectangle', 'm'], lower: ['bande', 'f'], upper: ['bande', 'f'], stripe: ['bande verticale', 'f'], circle: ['anneau', 'm'], dot: ['disque', 'm'], triangle: ['triangle', 'm'], diamond: ['losange', 'm'], cross: ['croix', 'f'], x: ['croix de Saint-André', 'f'], corner: ['coin', 'm'], turned_t: ['T', 'm'] };
+const COLN = { red: ['rouge', 'rouge'], blue: ['bleu', 'bleue'], yellow: ['jaune', 'jaune'], green: ['vert', 'verte'], white: ['blanc', 'blanche'], black: ['noir', 'noire'], orange: ['orange', 'orange'], brown: ['marron', 'marron'], purple: ['violet', 'violette'] };
+export function symName(symbol) {
+  const parts = (symbol || '').split(':');
+  const [fc, ...sp] = (parts[2] || '').split('_');
+  const shape = SHAPES[sp.join('_')];
+  const col = COLN[fc] || COLN[parts[0]];
+  if (!shape || !col) return 'son balisage';
+  const [noun, g] = shape;
+  const adj = col[g === 'f' ? 1 : 0];
+  const art = /^[aeiouyé]/i.test(noun) ? "l'" : g === 'f' ? 'la ' : 'le ';
+  if (noun.includes(' ')) { const [n0, ...rest] = noun.split(' '); return `${art}${n0} ${adj} ${rest.join(' ')}`.replace(/ de Saint-André$/, ' de Saint-André'); }
+  return `${art}${noun} ${adj}`;
+}
+const TURN_TXT = { G: 'à gauche', D: 'à droite', LG: 'légèrement à gauche', LD: 'légèrement à droite', TD: 'tout droit', DG: 'en épingle à gauche', DD: 'en épingle à droite' };
+export const turnText = (code) => TURN_TXT[code] || '';
+
+// Carnet de route : de quoi marcher en regardant les balises plutôt que le téléphone.
+export function roadbookHtml(h) {
+  const marks = h.marks || [];
+  if (!marks.length) return '';
+  const turns = h.turns || [];
+  const len = (m) => (m >= 1000 ? fmtKm(m) : fmtM(Math.round(m / 10) * 10));
+  const startTxt = h.start && h.start.name ? esc(h.start.name) : 'le point de départ';
+  const rows = [`<li class="rb-end"><span class="sym rb-dot"></span><span><b>Départ</b> depuis ${startTxt}</span></li>`];
+  for (const [a, b, sym, name] of marks) {
+    const n = turns.filter(([at]) => at >= a && at < b).length;
+    const crossings = n ? `, ${n} intersection${n > 1 ? 's' : ''}` : '';
+    if (sym) rows.push(`<li>${symHtml(sym)}<span>Suis <b>${symName(sym)}</b>${name ? ` <span class="note">(${esc(name)})</span>` : ''} sur ${len(b - a)}${crossings}</span></li>`);
+    else rows.push(`<li><span class="sym rb-none"></span><span>Pas de balisage sur ${len(b - a)} : suis la trace${crossings}</span></li>`);
+  }
+  rows.push(`<li class="rb-end"><span class="sym rb-dot"></span><span><b>Arrivée</b> ${h.kind === 'itinéraire' ? 'au bout de l\'itinéraire' : 'de retour au départ'}</span></li>`);
+  const tlist = turns.length ? `<details class="rb-turns"><summary>Voir les ${turns.length} intersections</summary><ol>${turns.map(([at, c]) => `<li><b>${fmtKm(at)}</b> ${turnText(c)}</li>`).join('')}</ol></details>` : '';
+  return `<div class="section" id="roadbook"><h3>Carnet de route</h3><p class="note">De quoi marcher les yeux sur les balises : repère les symboles avant de partir, le téléphone peut rester dans le sac.</p><ol class="rb">${rows.join('')}</ol>${tlist}</div>`;
 }
 
 export function warnsOf(h) {
@@ -275,14 +318,16 @@ export function openHike(h, ctx = {}) {
       </div>
       ${(() => { const pl = ctx.place || current.place; const t = pl ? idealLabel([...idealHike({ km: h.meters / 1000, up: h.up || 0 }, pl.type), ...(isHidden(pl) ? ['baroudeur'] : [])]) : ''; return t ? `<p class="ideal-line"><span class="ideal-tag">${esc(t)}</span></p>` : ''; })()}
       ${profileSvg(h.prof)}
+      ${roadbookHtml(h)}
       ${weatherHtml()}
       ${startTxt}
       ${warns.length ? `<ul class="warns">${warns.map((w) => `<li>${esc(w)}</li>`).join('')}</ul>` : ''}
       <div class="actions">
-        <button type="button" class="btn go wide" id="a-go">${IC.go}Suivre cette trace</button>
+        <button type="button" class="btn go wide" id="a-go">${IC.go}Lancer la rando</button>
         <button type="button" class="btn main" id="a-gpx">${IC.down}Trace GPX</button>
         <button type="button" class="btn" id="a-save">${IC.save}${saved ? 'Gardée hors ligne' : 'Garder hors ligne'}</button>
         <button type="button" class="btn wide" id="a-done">${IC.check}Je l'ai faite</button>
+        <button type="button" class="btn wide" id="a-share">${IC.share}Envoyer à un pote</button>
         ${site}${wmt}
       </div>
     </div>
@@ -317,6 +362,7 @@ export function openHike(h, ctx = {}) {
     corridorLater();
   };
   $('#a-done').onclick = () => openLogForm({ place: ctx.place || h.place, hike: h });
+  $('#a-share').onclick = () => shareHike(ctx.place || current.place || h.place, h, current.data && current.data.hikes);
 }
 
 function reopenPlace() {

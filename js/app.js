@@ -2,7 +2,8 @@
 import { CONFIG } from './config.js';
 import { store, bus, wantActive } from './state.js';
 import { initMap, map, layers, currentLayer, setLayer, trailsOn, setTrails, showMe, mapState, focus } from './map.js';
-import { openPlace, closeSheet, sheetOpen } from './sheet.js';
+import { openPlace, closeSheet, sheetOpen, openShared } from './sheet.js';
+import { incoming, inviteBanner } from './share.js';
 import { showTab, setNavigator, openWant, wantLabel, importGpxFile, openModal, closeModal, askName } from './pages.js';
 import { isGuiding, recenter } from './guide.js';
 import { searchLocal, searchRemote } from './places.js';
@@ -113,6 +114,15 @@ async function boot() {
   if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
   window.addEventListener('offline', () => toast('Hors ligne : les traces gardées et les lieux déjà vus restent disponibles.', 4500));
   window.__cairn = { go, openPlace, store, mapState, map };
+  // Lien partagé par un pote : on ouvre directement la rando, l'accueil des nouveaux attendra la prochaine visite.
+  const shared = incoming();
+  if (shared) {
+    go('carte');
+    history.replaceState(null, '', location.pathname);
+    openShared(shared.place, shared.n);
+    inviteBanner();
+    return;
+  }
   go(new URLSearchParams(location.search).get('tab') || 'accueil');
   askName();
 }

@@ -385,6 +385,8 @@ main, .end { position: relative; z-index: 1; }
     show(iosOther ? 'iosOther' : ios ? 'ios' : android ? 'android' : 'desktop');
   });
   if (!mobile) document.querySelectorAll('[data-add]').forEach((b) => b.lastChild.textContent = " Mettre Randodo sur mon téléphone");
+  // Arrivée depuis l'invitation de l'appli : on ouvre directement les étapes d'installation.
+  if (location.hash === '#installer') setTimeout(() => { const b = document.querySelector('[data-add]'); if (b) b.click(); }, 600);
 })();
 </script>
 </body>

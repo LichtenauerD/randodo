@@ -317,18 +317,26 @@ function openOrigin() {
   };
 }
 
+// Idée de la semaine déjà faite : photo grisée, coche verte et un mot du dodo.
+const DONE_SAYS = ['Déjà conquis, tu connais le coin.', 'Celle-là, tu l\'as déjà dans les jambes.', 'Déjà faite : à refaire en d\'autres saisons ?', 'Cochée ! Le dodo est fier de toi.'];
+const doneSay = (p) => DONE_SAYS[[...p.name].reduce((a, c) => a + c.charCodeAt(0), 0) % DONE_SAYS.length];
+const tick = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+
 function heroHtml(p) {
   const img = imageOf(p);
   const t = TYPES[p.type] || TYPES.lieu;
   const drive = p._min != null ? `, environ ${fmtDrive(p._min)} de route` : '';
-  return `<button type="button" class="hero pcard-like" data-id="${esc(p.id)}" style="${img ? `background-image:url('${img.replace(/'/g, '%27')}')` : `background:${t.color}`}">
+  const done = store.isDone(p);
+  return `<button type="button" class="hero pcard-like${done ? ' done' : ''}" data-id="${esc(p.id)}" style="${img ? `background-image:url('${img.replace(/'/g, '%27')}')` : `background:${t.color}`}">
+      ${done ? `<span class="done-say">${walkerSvg(34)}<span>${doneSay(p)}</span></span><span class="done-tick">${tick}</span>` : ''}
       ${img ? '' : `<span class="hero-glyph">${glyph(p.type)}</span>`}<span class="hero-tx"><b>${esc(p.name)}</b><span>${t.one}${p.massif ? ', ' + esc(p.massif) : ''}${drive}</span></span></button>
     ${p.desc ? `<p class="hero-desc">${esc(p.desc)}</p>` : ''}`;
 }
 function tileHtml(p) {
   const img = imageOf(p);
   const t = TYPES[p.type] || TYPES.lieu;
-  return `<button type="button" class="tile pcard-like" data-id="${esc(p.id)}"><span class="ph" style="${img ? `background-image:url('${img.replace(/'/g, '%27')}')` : `color:${t.color}`}">${img ? '' : glyph(p.type)}</span><b>${esc(p.name)}</b><span>${t.one}${p._min != null ? ', ' + fmtDrive(p._min) : ''}</span></button>`;
+  const done = store.isDone(p);
+  return `<button type="button" class="tile pcard-like${done ? ' done' : ''}" data-id="${esc(p.id)}"><span class="ph" style="${img ? `background-image:url('${img.replace(/'/g, '%27')}')` : `color:${t.color}`}">${img ? '' : glyph(p.type)}${done ? `<span class="done-tick">${tick}</span>` : ''}</span><b>${esc(p.name)}</b><span>${done ? '<em class="done-txt">Déjà faite</em>' : t.one + (p._min != null ? ', ' + fmtDrive(p._min) : '')}</span></button>`;
 }
 function picksHtml(picks) {
   if (!picks.length) return '<p class="note">Tu as fait tous les sites proches. Allonge le temps de route dans la recherche du haut.</p>';

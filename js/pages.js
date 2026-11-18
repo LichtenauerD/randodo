@@ -1,4 +1,6 @@
 // Pages : traces, historique (mes randos, communauté, envies), réglages, diagnostic, envie du jour, saisie d'une rando.
+import { shareApp } from './share.js';
+import { startTour, maybeTour } from './tour.js';
 import { CONFIG, TYPES, VERSION } from './config.js';
 import { store, want, saveWant, wantActive, DEFAULT_WISH, bus } from './state.js';
 import { openHike, openPlace, frDate } from './sheet.js';
@@ -20,6 +22,7 @@ let tab = 'carte';
 let histTab = 'mes';
 let goTab = () => {};
 export function setNavigator(fn) { goTab = fn; setHomeNavigator(fn); }
+export const navigate = (t) => goTab && goTab(t);
 
 // ---------- Fenêtre ----------
 export function openModal(html) {
@@ -117,7 +120,7 @@ export function openLogForm({ place, hike, walked, walkedMinutes, onSaved, entry
 
 // ---------- Premier lancement : prénom, puis inscription dans la feuille du groupe ----------
 export function askName() {
-  if (settings.get('pseudo', '').trim()) { register(); if (needsOnboarding()) openOnboarding(() => { if (tab === 'accueil') render(); }); return; }
+  if (settings.get('pseudo', '').trim()) { register(); if (needsOnboarding()) openOnboarding(() => { if (tab === 'accueil') render(); maybeTour(); }); else maybeTour(); return; }
   const box = openModal(`<div class="welcome"><img src="icons/icon-192.png" alt="" width="84" height="84"><h2>Bienvenue sur Randodo</h2><p class="motto">Le dodo ne vole pas. Il marche. Et toi ?</p>
     <p>C'est quoi ton prénom ? Il sert à signer tes randos quand tu les partages avec les autres.</p>
     <label class="field"><input type="text" id="wn-name" placeholder="Ton prénom" maxlength="24" autocomplete="given-name" autocapitalize="words"></label>
@@ -130,7 +133,8 @@ export function askName() {
     closeModal();
     register();
     if (tab === 'accueil') render();
-    if (needsOnboarding()) openOnboarding(() => { if (tab === 'accueil' || tab === 'objectifs') render(); });
+    if (needsOnboarding()) openOnboarding(() => { if (tab === 'accueil' || tab === 'objectifs') render(); maybeTour(); });
+    else maybeTour();
   };
   $('#wn-ok', box).onclick = ok;
   $('#wn-name', box).onkeydown = (e) => { if (e.key === 'Enter') ok(); };
@@ -225,7 +229,7 @@ function renderTraces() {
       <h3>${lvDot(h.level)}${esc(h.title)}</h3>
       <p class="meta">${h.place ? esc(h.place.name) + ', ' : ''}${h.source === 'import' ? 'trace importée' : h.source === 'balise' ? 'circuit balisé' : 'tracé calculé'}${h.corridor && h.corridor.length ? ', carte de terrain incluse' : ''}</p>
       ${numsLine({ km: h.meters / 1000, up: h.up, minutes: h.minutes })}
-      <div class="row"><button type="button" class="btn small go" data-a="go">Suivre</button><button type="button" class="btn small" data-a="see">Voir</button><button type="button" class="btn small" data-a="gpx">GPX</button><button type="button" class="btn small" data-a="del">Supprimer</button></div>
+      <div class="row"><button type="button" class="btn small go" data-a="go">Lancer</button><button type="button" class="btn small" data-a="see">Voir</button><button type="button" class="btn small" data-a="gpx">GPX</button><button type="button" class="btn small" data-a="del">Supprimer</button></div>
     </div>`).join('');
   p.innerHTML = `<h2>Traces</h2><p class="lead">Les randonnées gardées sur ce téléphone. Elles se suivent sans réseau.</p>
     <button type="button" class="btn main wide" id="t-import" style="width:100%;margin-bottom:14px">Importer un fichier GPX</button>
@@ -337,6 +341,8 @@ async function renderCommunity(body) {
 function renderSettings() {
   const p = page();
   p.innerHTML = `<h2>Réglages</h2>
+    <div class="card"><h3>Faire découvrir Randodo</h3><p class="meta">Envoie le lien de l'appli à tes amis, ou revois la visite guidée du premier lancement.</p>
+      <div class="row"><button type="button" class="btn small main" id="s-share">Partager Randodo</button><button type="button" class="btn small" id="s-tuto">Revoir la visite guidée</button></div></div>
     <div class="card"><h3>Groupe</h3><p class="meta">Pour voir les randos de tes amis dans l'onglet « Communauté ». L'adresse du groupe vient du script Google (voir le mode d'emploi) ; tant qu'elle est vide, tout le reste de l'appli fonctionne.</p>
       <label class="field"><span>Mon prénom</span><input type="text" id="s-pseudo" value="${esc(settings.get('pseudo', ''))}" placeholder="Affiché à côté de tes randos" maxlength="24"></label>
       <label class="field"><span>Adresse du groupe</span><input type="url" id="s-url" value="${esc(settings.get('communityUrl', '') || CONFIG.communityUrl)}" placeholder="https://script.google.com/macros/s/…/exec" autocapitalize="off" autocorrect="off"></label>
@@ -353,6 +359,8 @@ function renderSettings() {
     <div class="card"><h3>Sources</h3><p class="meta">Lieux, sentiers et balisage : © contributeurs OpenStreetMap (licence ODbL). Photos : Wikimedia Commons et Wikipédia. Altitudes : modèle de terrain Copernicus (© ESA, 30 m pour les lieux de la sélection, 90 m via Open-Meteo pour les autres). Recherche de lieux : Photon. Temps de route : OSRM. Les tracés sont calculés automatiquement et ne remplacent ni une carte ni ton jugement sur le terrain.</p>
       <p class="meta" style="margin-top:8px">Randodo ${VERSION}</p></div>
     <p class="signature">Le dodo ne vole pas. Il marche. Et toi ?<br>Par Dorian Lichtenauer</p>`;
+  $('#s-share', p).onclick = () => shareApp();
+  $('#s-tuto', p).onclick = () => startTour();
   $('#s-pseudo', p).onchange = (e) => { settings.set('pseudo', e.target.value.trim()); register(); };
   $('#s-url', p).onchange = (e) => { settings.set('communityUrl', e.target.value.trim()); register(); };
   $('#s-ign', p).onchange = (e) => { settings.set('ignScanKey', e.target.value.trim()); toast(e.target.value.trim() ? 'Clé enregistrée : le fond « IGN 1:25 000 » est disponible sur la carte.' : 'Clé retirée.'); };

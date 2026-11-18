@@ -101,3 +101,11 @@ Les photos locales vont dans le dossier `photos/`, avec une ligne par lieu dans 
 - **230 lieux** dans la sélection (liste du patch note ajoutée), randos précalculées chaque semaine, 189 photos Wikimedia vérifiées et créditées.
 - **Script du groupe** : il faut recoller `apps-script/Code.gs` dans la feuille (Extensions > Apps Script), puis **Déployer > Gérer les déploiements > modifier (crayon) > Version : Nouvelle version > Déployer**. L'adresse ne change pas. La feuille « Membres » gagne trois colonnes (grade, lieux, faits).
 - Données régénérées sur GitHub : `.github/workflows/geo.yml` (cartes des secteurs), `photos.yml` (photos candidates, branche à part), `randos.yml` (chaque lundi).
+
+### 1.7
+
+- **Mode rando** (« Lancer la rando ») : chrono, kilomètres et montée restants, profil coloré selon la pente avec ta position, annonce des tronçons à venir (« 600 m de montée raide »), balise à suivre, et consigne aux intersections (« Dans 60 m, à gauche », vibration à l'approche).
+- **Carnet de route** sur chaque fiche : les balises à suivre dans l'ordre, avec leurs distances, et la liste des intersections. De quoi marcher sans regarder le téléphone.
+- **Partage** : « Envoyer à un pote » sur chaque rando, « Partager Randodo » dans Réglages. Le lien ouvre directement la rando ; dans le navigateur, une invitation propose d'installer l'appli.
+- **Visite guidée** au premier lancement, commentée par le dodo, à revoir depuis Réglages.
+- Idées de la semaine déjà faites grisées avec une coche ; Conquête : cocher un lieu ne renvoie plus en haut de la page.

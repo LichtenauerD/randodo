@@ -4,10 +4,38 @@ import { overpass, qGraph, qRelation, qWays } from './overpass.js';
 import { buildGraph, proposeHikes, markedCircuits, corridor, stitch } from './router.js';
 import { profile, summarize } from './elev.js';
 import { knownPlaces } from './places.js';
-import { kv, settings, dist, simplify, walkMinutes, lineLength, bboxOf, uid, cumulative, slugOf } from './util.js';
+import { kv, settings, dist, simplify, walkMinutes, lineLength, bboxOf, uid, cumulative, slugOf, projector } from './util.js';
 
 const TTL = 30 * 86400000;
 const FORMAT = 5;
+
+// Carnet de route : tronçons de balisage (marks : [début, fin, symbole, nom], en mètres le long de la trace)
+// et intersections (turns : [mètres, code]) recalés sur la trace simplifiée.
+function roadbook(h, c) {
+  const cum = cumulative(h.pts), total = cum[cum.length - 1];
+  if (c.source === 'balise') { h.marks = c.symbol ? [[0, Math.round(total), c.symbol, c.name || '']] : []; h.turns = []; return; }
+  const k = c.meters ? total / c.meters : 1;
+  h.marks = (c.marks || []).map(([a, b, s, n]) => [Math.round(a * k), Math.round(b * k), s, n]);
+  // Chaque intersection est projetée sur la trace, en avançant toujours : une boucle qui se recroise ne revient pas en arrière.
+  h.turns = [];
+  for (const [la, lo, code, at0] of c.turns || []) {
+    // On cherche autour de la distance prévue : un carrefour traversé deux fois garde ses deux consignes.
+    const hint = at0 != null ? at0 * k : null;
+    const proj = projector(la);
+    const [px, py] = proj([la, lo]);
+    let best = { d: Infinity, at: 0 };
+    for (let i = 0; i < h.pts.length - 1; i++) {
+      if (hint != null && (cum[i + 1] < hint - 150 || cum[i] > hint + 150)) continue;
+      const [ax, ay] = proj(h.pts[i]), [bx, by] = proj(h.pts[i + 1]);
+      const vx = bx - ax, vy = by - ay, l2 = vx * vx + vy * vy;
+      const t = l2 ? Math.max(0, Math.min(1, ((px - ax) * vx + (py - ay) * vy) / l2)) : 0;
+      const d = Math.hypot(ax + t * vx - px, ay + t * vy - py);
+      if (d < best.d) best = { d, at: cum[i] + (cum[i + 1] - cum[i]) * t };
+    }
+    if (best.d < 15) h.turns.push([Math.round(best.at), code]);
+  }
+  h.turns.sort((a, b) => a[0] - b[0]);
+}
 
 // Écarte les randos trop routières (plus de 35 % sur route) quand le même niveau a une autre proposition.
 export function tidy(hikes) {
@@ -118,6 +146,7 @@ export async function hikesFor(place, onStep = () => {}, force = false) {
       road: c.road || 0, marked: c.marked ?? 1, alpine: !!c.alpine, demanding: !!c.demanding,
       relId: c.source === 'balise' ? c.id : null, symbol: c.symbol || '', website: c.website || '',
     };
+    roadbook(h, c);
     await measure(h);
     h.corridor = corridor(raw, h.pts, 450);
     hikes.push(h);
@@ -158,6 +187,7 @@ export async function loadCircuit(meta, place) {
     pts: simplify(st.pts, 2), meters: lineLength(st.pts), road: 0, marked: 1, alpine: false, demanding: false,
     relId: meta.id, symbol: meta.symbol || '', website: meta.website || (rel.tags && /^https?:\/\//i.test(rel.tags.website || '') ? rel.tags.website : ''), corridor: null,
   };
+  roadbook(h, { source: 'balise', symbol: meta.symbol || '', name: meta.name });
   return measure(h);
 }
 

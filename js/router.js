@@ -422,6 +422,73 @@ function pickSecond(g, place, others, outVerts) {
   return best;
 }
 
+// ---------- Carnet de route : balisage suivi et intersections ----------
+
+// Tronçons de balisage le long du parcours : [début (m), fin (m), osmc:symbol, nom de l'itinéraire].
+function markRuns(g, edges) {
+  if (!g.relById) g.relById = new Map(g.relations.map((r) => [r.id, r]));
+  const runs = [];
+  let along = 0, cur = null;
+  for (const e of edges) {
+    const w = g.ways[g.eWay[e]], len = g.eLen[e];
+    const rels = (g.markedBy.get(w.id) || []).map((id) => g.relById.get(id)).filter((r) => r && r.tags && r.tags['osmc:symbol']);
+    // On garde l'itinéraire en cours tant qu'il continue, sinon le premier balisé qui passe là.
+    let r = cur && cur.rel && rels.find((x) => x.id === cur.rel.id);
+    if (!r && cur && cur.rel) r = rels.find((x) => x.tags['osmc:symbol'] === cur.rel.tags['osmc:symbol']);
+    if (!r) r = rels[0] || null;
+    const key = r ? r.tags['osmc:symbol'] : '';
+    if (!cur || cur.key !== key) { cur = { key, rel: r, from: along, to: along + len }; runs.push(cur); }
+    else { cur.to += len; if (r) cur.rel = r; }
+    along += len;
+  }
+  // Les bouts de moins de 120 m entre deux tronçons identiques sont absorbés (petit raccord, pont, carrefour).
+  const out = [];
+  for (const r of runs) {
+    const prev = out[out.length - 1];
+    if (prev && (prev.key === r.key || r.to - r.from < 120)) { prev.to = r.to; continue; }
+    if (prev && prev.to - prev.from < 120 && out.length > 1 && out[out.length - 2].key === r.key) { out.pop(); out[out.length - 1].to = r.to; continue; }
+    out.push({ ...r });
+  }
+  // Un bout de moins de 150 m au départ ou à l'arrivée (accès au parking) rejoint le tronçon voisin.
+  if (out.length > 1 && out[0].to - out[0].from < 150) { out[1].from = 0; out.shift(); }
+  if (out.length > 1 && out[out.length - 1].to - out[out.length - 1].from < 150) { out[out.length - 2].to = out[out.length - 1].to; out.pop(); }
+  return out.map((r) => [Math.round(r.from), Math.round(r.to), r.key, r.rel ? (r.rel.tags.name || r.rel.tags.ref || '') : '']);
+}
+
+const turnAngle = (a, b) => ((b - a + 540) % 360) - 180; // positif : vers la droite
+
+// Intersections du parcours où il faut choisir : [lat, lon, code]. Codes : G/D à gauche/droite,
+// LG/LD légèrement, TD tout droit (quand une autre branche part presque tout droit), DG/DD virage en épingle.
+function junctionTurns(g, verts) {
+  const P = (v) => [g.lat[v], g.lon[v]];
+  const cum = [0];
+  for (let i = 1; i < verts.length; i++) cum.push(cum[i - 1] + dist(P(verts[i - 1]), P(verts[i])));
+  const total = cum[cum.length - 1];
+  const turns = [];
+  for (let i = 1; i < verts.length - 1; i++) {
+    const v = verts[i];
+    if (cum[i] < 30 || total - cum[i] < 30) continue;
+    const nb = new Set();
+    for (let a = g.start[v]; a < g.start[v + 1]; a++) nb.add(g.adjTo[a]);
+    if (nb.size < 3) continue;
+    // Directions d'arrivée et de départ mesurées sur une vingtaine de mètres.
+    let j = i - 1; while (j > 0 && cum[i] - cum[j] < 20) j--;
+    let k = i + 1; while (k < verts.length - 1 && cum[k] - cum[i] < 20) k++;
+    const bin = bearing(P(verts[j]), P(v)), bout = bearing(P(v), P(verts[k]));
+    const a = turnAngle(bin, bout);
+    const others = [...nb].filter((u) => u !== verts[i - 1] && u !== verts[i + 1]).map((u) => turnAngle(bin, bearing(P(v), P(u))));
+    if (!others.length) continue;
+    const obvious = Math.abs(a) < 25 && others.every((b) => Math.abs(b) > 55);
+    if (obvious) continue;
+    const s = a >= 0 ? 'D' : 'G';
+    const code = Math.abs(a) < 25 ? 'TD' : Math.abs(a) < 60 ? 'L' + s : Math.abs(a) < 140 ? s : 'D' + s;
+    // Deux intersections à moins de 15 m : un seul carrefour, on garde la dernière consigne.
+    if (turns.length && cum[i] - turns[turns.length - 1].at < 15) turns.pop();
+    turns.push({ at: cum[i], lat: g.lat[v], lon: g.lon[v], code });
+  }
+  return turns.map((t) => [+t.lat.toFixed(5), +t.lon.toFixed(5), t.code, Math.round(t.at)]);
+}
+
 function finish(g, cand, start, place, via) {
   const info = describe(g, cand.edges);
   const pts = coords(g, cand.verts);
@@ -432,6 +499,7 @@ function finish(g, cand, start, place, via) {
     start: { v: start.v, lat: start.lat, lon: start.lon, kind: start.kind, name: startName },
     via: via ? { name: via.name, lat: via.lat, lon: via.lon } : null,
     source: 'calcul',
+    marks: markRuns(g, cand.edges), turns: junctionTurns(g, cand.verts),
   };
 }
 

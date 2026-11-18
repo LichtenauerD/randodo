@@ -50,6 +50,16 @@ async function loadGeo(sid) {
   }
 }
 
+// Re-rendu en gardant la position de lecture : cocher un lieu ne renvoie pas en haut de la page.
+function rerender(root) {
+  const page = root.closest('#page') || root;
+  const boxes = [page, document.scrollingElement].filter(Boolean);
+  const ys = boxes.map((b) => b.scrollTop);
+  renderObjectifs(page);
+  const back = () => boxes.forEach((b, i) => { b.scrollTop = ys[i]; });
+  back(); requestAnimationFrame(back); setTimeout(back, 120);
+}
+
 export function renderObjectifs(root) {
   const all = SITES;
   const n = doneCount(all);
@@ -94,7 +104,7 @@ function paintList(root) {
       <button type="button" class="see" data-k="${slugOf(p.name)}" aria-label="Voir ${esc(p.name)} sur la carte">Voir</button></li>`;
   }).join('') || `<li class="note">${filter === 'done' ? 'Rien de coché ici pour l\'instant.' : 'Tout est fait dans ce secteur. Chapeau.'}</li>`;
   const bySlug = (k) => SITES.find((p) => slugOf(p.name) === k);
-  ul.querySelectorAll('input').forEach((c) => { c.onchange = async () => { await store.setVisited(bySlug(c.dataset.k), c.checked); renderObjectifs(root.closest('#page') || root); }; });
+  ul.querySelectorAll('input').forEach((c) => { c.onchange = async () => { await store.setVisited(bySlug(c.dataset.k), c.checked); rerender(root); }; });
   ul.querySelectorAll('.see').forEach((b) => { b.onclick = () => bus.emit('openPlace', bySlug(b.dataset.k)); });
 }
 
@@ -153,7 +163,7 @@ async function drawMap(root) {
       <button type="button" class="btn small" data-act="see">Voir les randos</button></div>`, { closeButton: false });
     m.on('popupopen', (e) => {
       const box = e.popup.getElement();
-      box.querySelector('[data-act=tog]').onclick = async () => { if (!store.isVisited(p) && store.isDone(p)) return; await store.setVisited(p, !store.isDone(p)); renderObjectifs(root.closest('#page') || root); };
+      box.querySelector('[data-act=tog]').onclick = async () => { if (!store.isVisited(p) && store.isDone(p)) return; await store.setVisited(p, !store.isDone(p)); rerender(root); };
       box.querySelector('[data-act=see]').onclick = () => bus.emit('openPlace', p);
     });
   }
