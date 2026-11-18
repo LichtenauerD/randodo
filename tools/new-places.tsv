@@ -1,0 +1,136 @@
+# nom	type	massif	pays	requête	description
+Cascade de la Pissoire	cascade	Vosges	FR	Cascade de la Pissoire, Vosges	Petite cascade en forêt, sur un affluent de la Moselotte.
+Cascades du Bouchot	cascade	Vosges	FR	Saut du Bouchot, Sapois	Chute de la Vologne en sous-bois, dans les Hautes-Vosges.
+Cascade du Hohwald	cascade	Vosges	FR	Cascade du Hohwald	Cascade en forêt au-dessus du village du Hohwald.
+Cascade du Seebach	cascade	Vosges	FR	Cascade du Seebach, Haut-Rhin	Cascade dans le vallon du Seebach, au pied des crêtes.
+Cascade du Bockloch	cascade	Vosges	FR	Cascade du Bockloch	Cascade en forêt au-dessus de la vallée de Munster.
+Cascade du Heidenbad	cascade	Vosges	FR	Cascade du Heidenbad	Cascade en sous-bois dans la vallée de la Weiss.
+Cascade de Mérelle	cascade	Vosges	FR	Cascade de Mérelle, Gérardmer	Cascade en forêt au-dessus de Gérardmer.
+Cascade de Retournemer	cascade	Vosges	FR	Cascade de Retournemer	Cascade de la Vologne sous le lac de Retournemer.
+Cascade de Faymont	cascade	Vosges	FR	Cascade de Faymont, Le Val-d'Ajol	Cascade en sous-bois près du Val-d'Ajol.
+Cascade du Gué du Saut	cascade	Vosges	FR	Cascade du Gué du Saut	Cascade sur un torrent des Vosges méridionales.
+Burgbachwasserfall	cascade	Forêt-Noire	DE	Burgbachwasserfall, Bad Rippoldsau	Chute d'eau libre parmi les plus hautes d'Allemagne, en forêt.
+Zweribachwasserfälle	cascade	Forêt-Noire	DE	Zweribachwasserfälle, Simonswald	Cascades sauvages au-dessus du Simonswälder Tal.
+Cascade de Geroldsau	cascade	Forêt-Noire	DE	Geroldsauer Wasserfall	Cascade dans un vallon boisé près de Baden-Baden.
+Gertelbach (cascades et gorge)	cascade	Forêt-Noire	DE	Gertelbachwasserfälle, Bühl	Cascades en escalier dans une gorge granitique.
+Gaishöll-Wasserfälle	cascade	Forêt-Noire	DE	Gaishöll Wasserfälle, Sasbachwalden	Cascades dans une gorge au-dessus de Sasbachwalden.
+Baume-les-Messieurs (reculée, cascade, grottes)	cascade	Jura	FR	Cascade des Tufs, Baume-les-Messieurs	Reculée spectaculaire, cascade de tuf et grottes, sous les belvédères.
+Gorges et cascades de la Langouette	gorge	Jura	FR	Gorges de la Langouette	Gorge étroite et profonde creusée par la Saine.
+Cascade de la Billaude	cascade	Jura	FR	Cascade de la Billaude	Cascade de la Lemme dans une gorge boisée.
+Cascades et gorges du Flumen	cascade	Jura	FR	Cascades du Flumen	Cascades en escalier sous Saint-Claude.
+Cascade de la Frasnée	cascade	Jura	FR	Cascade de la Frasnée	Cascade de tuf au fond d'une reculée.
+Cascade de la Queue de Cheval	cascade	Jura	FR	Cascade de la Queue de Cheval, Jura	Cascade en forêt dans le Jura.
+Lac de Lispach	lac	Vosges	FR	Lac de Lispach	Lac tourbeux d'altitude près de La Bresse.
+Lac de Sewen	lac	Vosges	FR	Lac de Sewen	Lac de la haute vallée de la Doller, en partie atterri.
+Lac de la Maix	lac	Vosges	FR	Lac de la Maix	Petit lac forestier près du Donon, avec sa chapelle.
+Étang de Hanau	lac	Vosges du Nord	FR	Étang de Hanau, Philippsbourg	Étang et tourbière parmi les grès des Vosges du Nord.
+Lac de la Moselotte	lac	Vosges	FR	Lac de la Moselotte	Plan d'eau de la vallée de la Moselotte.
+Lac des Corbeaux	lac	Vosges	FR	Lac des Corbeaux, La Bresse	Lac glaciaire en forêt au-dessus de La Bresse.
+Glaswaldsee	lac	Forêt-Noire	DE	Glaswaldsee	Lac de cirque isolé en forêt.
+Blindensee	lac	Forêt-Noire	DE	Blindensee, Schonach	Lac tourbeux au milieu d'une lande.
+Hohlohsee	lac	Forêt-Noire	DE	Hohlohsee, Kaltenbronn	Lac de tourbière sur les hauteurs du Kaltenbronn.
+Mathisleweiher	lac	Forêt-Noire	DE	Mathisleweiher	Petit lac de tourbière près de Hinterzarten.
+Windgfällweiher	lac	Forêt-Noire	DE	Windgfällweiher	Petit lac en forêt près du Titisee.
+Sankenbachsee	lac	Forêt-Noire	DE	Sankenbachsee, Baiersbronn	Petit lac de cirque avec cascade, près de Baiersbronn.
+Lac de Chalain	lac	Jura	FR	Lac de Chalain	Grand lac jurassien aux eaux claires.
+Lac de Vouglans	lac	Jura	FR	Belvédère du Regardoir, Moirans-en-Montagne	Grande retenue de l'Ain, vue depuis le belvédère du Regardoir.
+Lac de Narlay	lac	Jura	FR	Lac de Narlay	Lac rond et profond de la région des lacs.
+Lac d'Ilay	lac	Jura	FR	Lac d'Ilay	Lac de la région des lacs, au pied du pic de l'Aigle.
+Lac de Bonlieu	lac	Jura	FR	Lac de Bonlieu	Lac en forêt sous les falaises.
+Lac de Bellefontaine	lac	Jura	FR	Lac de Bellefontaine	Lac tourbeux d'altitude, voisin du lac des Mortes.
+Lac des Mortes	lac	Jura	FR	Lac des Mortes	Lac tourbeux d'altitude dans le haut Jura.
+Lac de l'Étival	lac	Jura	FR	Lac de l'Étival	Lac en forêt dans le haut Jura.
+Lac de Lamoura	lac	Jura	FR	Lac de Lamoura	Petit lac d'altitude près de Lamoura.
+Petit Hohneck	sommet	Vosges	FR	Petit Hohneck	Sommet voisin du Hohneck, au-dessus du Frankenthal.
+Le Markstein	sommet	Vosges	FR	Markstein, Vosges	Col et chaumes sur la route des Crêtes.
+Rothenbachkopf	sommet	Vosges	FR	Rothenbachkopf	Sommet des crêtes au-dessus des lacs.
+Rainkopf	sommet	Vosges	FR	Rainkopf	Sommet des crêtes entre le Hohneck et le Rothenbachkopf.
+Kastelberg	sommet	Vosges	FR	Kastelberg, Vosges	Sommet des crêtes au-dessus de la vallée de la Wormsa.
+Le Tanet	sommet	Vosges	FR	Tanet, Vosges	Sommet des chaumes au-dessus du lac Vert.
+Rocher de Mutzig	sommet	Vosges	FR	Rocher de Mutzig	Sommet rocheux en forêt, au-dessus de la vallée de la Bruche.
+Scharrachberg	sommet	Vosges	FR	Scharrachberg	Colline viticole au pied des Vosges.
+Seebuck	sommet	Forêt-Noire	DE	Seebuck, Feldberg	Sommet du Feldberg avec la tour de Bismarck, au-dessus du Feldsee.
+Rohrhardsberg	sommet	Forêt-Noire	DE	Rohrhardsberg	Sommet boisé du centre de la Forêt-Noire.
+Karlsruher Grat	rocher	Forêt-Noire	DE	Karlsruher Grat, Ottenhöfen	Arête rocheuse escarpée, réservée aux marcheurs sûrs de leurs pieds.
+Crêt de la Neige	sommet	Jura	FR	Crêt de la Neige	Point culminant du Jura, au-dessus du pays de Gex.
+Crêt de Chalam	sommet	Jura	FR	Crêt de Chalam	Sommet dégagé au-dessus de la Valserine.
+Le Reculet	sommet	Jura	FR	Le Reculet	Sommet du Jura avec sa croix, face au Léman.
+Colomby de Gex	sommet	Jura	FR	Colomby de Gex	Sommet du Jura au-dessus du pays de Gex.
+Grand Colombier	sommet	Jura	FR	Grand Colombier, Ain	Sommet du Jura méridional au-dessus du Rhône.
+Mont Rond	sommet	Jura	FR	Mont Rond, Ain	Sommet du haut Jura près du col de la Faucille.
+Mont Rivel	sommet	Jura	FR	Mont Rivel, Champagnole	Colline boisée au-dessus de Champagnole.
+La Dôle	sommet	Jura	CH	La Dôle	Sommet du Jura vaudois, face aux Alpes.
+Pic de l'Aigle	vue	Jura	FR	Pic de l'Aigle, Jura	Belvédère sur la région des lacs.
+Belvédère des Quatre Lacs	vue	Jura	FR	Belvédère des 4 lacs, Le Frasnois	Belvédère sur quatre lacs du haut Jura.
+Belvédère du Fer à Cheval	vue	Jura	FR	Belvédère du Fer à Cheval, Arbois	Belvédère au-dessus de la reculée des Planches.
+Belvédère de la Châtelaine	vue	Jura	FR	Belvédère de la Châtelaine, Arbois	Belvédère au-dessus de la reculée des Planches, près des ruines.
+Belvédère des Roches de Baume	vue	Jura	FR	Belvédère des Roches de Baume	Belvédère au-dessus de la reculée de Baume-les-Messieurs.
+Belvédère de Fontenu	vue	Jura	FR	Belvédère de Fontenu	Belvédère au-dessus du lac de Chalain.
+Rochers de Martinswand	rocher	Vosges	FR	Martinswand, Vosges	Paroi rocheuse au-dessus de la vallée de la Fecht.
+Rochers des Hirschsteine	rocher	Vosges	FR	Hirschsteine, Vosges	Rochers en surplomb sur la crête, au-dessus du lac Vert.
+Falkenstein (château et rochers)	chateau	Vosges du Nord	FR	Château du Falkenstein, Philippsbourg	Ruine creusée dans un rocher de grès des Vosges du Nord.
+Rochers des Géants	rocher	Vosges	FR	Rochers des Géants, Vosges	Chaos rocheux en forêt.
+Altschlossfelsen	rocher	Vosges du Nord	DE	Altschlossfelsen, Eppenbrunn	Long massif de grès aux formes étranges, juste derrière la frontière.
+Dahner Felsenland	rocher	Vosges du Nord	DE	Dahner Felsenland	Pitons de grès et châteaux rupestres autour de Dahn.
+Rocher Hans	rocher	Vosges du Nord	FR	Rocher Hans	Rocher de grès en forêt des Vosges du Nord.
+Rocher du Wachtfels	rocher	Vosges du Nord	FR	Wachtfels, Vosges du Nord	Rocher de grès en forêt des Vosges du Nord.
+Sentier des 3 Rochers	rocher	Vosges	FR	Sentier des Trois Rochers	Sentier en forêt reliant trois rochers.
+Rocher de l'Erbsenfelsen	rocher	Vosges	FR	Erbsenfelsen	Rocher de grès en forêt.
+Zigeunerfels (Rocher des Tziganes)	rocher	Vosges du Nord	FR	Zigeunerfelsen	Rocher de grès en forêt, près de la frontière.
+Rötenbachschlucht	gorge	Forêt-Noire	DE	Rötenbachschlucht	Gorge sauvage d'un affluent de la Wutach.
+Lotenbachklamm	gorge	Forêt-Noire	DE	Lotenbachklamm	Gorge étroite, sur le circuit des trois gorges.
+Teufelsmühle	sommet	Forêt-Noire	DE	Teufelsmühle, Loffenau	Sommet et rochers au-dessus de la vallée de la Murg.
+Monbachschlucht	gorge	Forêt-Noire	DE	Monbachtal, Bad Liebenzell	Vallon encaissé et rocheux près de Bad Liebenzell.
+Gauchachschlucht	gorge	Forêt-Noire	DE	Gauchachschlucht	Gorge sauvage affluente de la Wutach.
+Haslachschlucht	gorge	Forêt-Noire	DE	Haslachschlucht	Gorge boisée près de Lenzkirch.
+Spitzfelsen	rocher	Forêt-Noire	DE	Spitzfelsen, Forêt-Noire	Rocher-belvédère en forêt.
+Bürstenstein	rocher	Forêt-Noire	DE	Bürstenstein, Bühlertal	Rochers de granit au-dessus de la vallée de Bühl.
+Huberfelsen	rocher	Forêt-Noire	DE	Huberfelsen	Rocher-belvédère en forêt.
+Steinmäuerle	rocher	Forêt-Noire	DE	Steinmäuerle	Rochers en forêt.
+Rappenfelsen	rocher	Forêt-Noire	DE	Rappenfelsen	Rocher-belvédère en forêt.
+Gorges de l'Abîme	gorge	Jura	FR	Gorges de l'Abîme, Saint-Claude	Gorge du Tacon près de Saint-Claude.
+Cirque de Consolation	gorge	Jura	FR	Cirque de Consolation	Cirque boisé aux sources du Dessoubre.
+Roche du Prêtre	vue	Jura	FR	Roche du Prêtre	Belvédère vertigineux sur le cirque de Consolation.
+Gorges de la Saine	gorge	Jura	FR	Gorges de la Saine, Foncine-le-Haut	Gorges boisées de la Saine.
+Gorges du Pichoux	gorge	Jura	CH	Gorges du Pichoux	Gorge de la Sorne entre deux parois calcaires.
+Château du Nideck	chateau	Vosges	FR	Château du Nideck	Ruine en forêt au-dessus de la cascade du Nideck.
+Château de Lutzelbourg	chateau	Vosges du Nord	FR	Château de Lutzelbourg	Ruine au-dessus de la vallée de la Zorn.
+Château de Wasigenstein	chateau	Vosges du Nord	FR	Château du Wasigenstein	Ruine double sur des rochers de grès.
+Château de Lichtenberg	chateau	Vosges du Nord	FR	Château de Lichtenberg	Château fort au-dessus du village de Lichtenberg.
+Château de Salm	chateau	Vosges	FR	Château de Salm	Ruine en forêt au-dessus de la vallée de la Bruche.
+Château du Vieux-Windstein	chateau	Vosges du Nord	FR	Château du Vieux-Windstein	Ruine creusée dans le grès.
+Château du Nouveau-Windstein	chateau	Vosges du Nord	FR	Château du Nouveau-Windstein	Ruine voisine du Vieux-Windstein.
+Château du Grand-Ringelstein	chateau	Vosges	FR	Château du Ringelstein	Ruine en forêt près d'Oberhaslach.
+Château de Waldeck	chateau	Vosges du Nord	FR	Château de Waldeck, Éguelshardt	Ruine au-dessus de l'étang de Hanau.
+Château du Kagenfels	chateau	Vosges	FR	Château du Kagenfels	Ruine en forêt près d'Obernai.
+Burg Baden	chateau	Forêt-Noire	DE	Altes Schloss Hohenbaden	Vieux château au-dessus de Baden-Baden.
+Ruines de Zavelstein	chateau	Forêt-Noire	DE	Burgruine Zavelstein	Ruine au-dessus de la vallée de la Teinach.
+Burgruine Falkenstein	chateau	Forêt-Noire	DE	Burgruine Falkenstein, Höllental	Ruine sur un éperon au-dessus du Höllental.
+Hohenschramberg	chateau	Forêt-Noire	DE	Hohenschramberg	Ruine de forteresse au-dessus de Schramberg.
+Kastelburg	chateau	Forêt-Noire	DE	Kastelburg, Waldkirch	Ruine au-dessus de Waldkirch.
+Château de Châtel-de-Joux	chateau	Jura	FR	Châtel-de-Joux	Ruines près du lac de Vouglans.
+Château de Présilly	chateau	Jura	FR	Château de Présilly, Jura	Ruine médiévale du Jura.
+Château de Mirebel	chateau	Jura	FR	Château de Mirebel	Ruine sur une falaise du Jura.
+Château de Vaulgrenant	chateau	Jura	FR	Château de Vaulgrenant	Ruine au-dessus de la vallée de la Loue.
+Château de Frontenay	chateau	Jura	FR	Château de Frontenay, Jura	Château sur un éperon du premier plateau.
+Château d'Oliferne	chateau	Jura	FR	Château d'Oliferne	Ruine perchée au-dessus de l'Ain.
+Tourbière de Machais	lieu	Vosges	FR	Tourbière de Machais	Tourbière d'altitude protégée, sous la crête.
+Tourbière de Jemnaufaing	lieu	Vosges	FR	Tourbière de Jemnaufaing	Tourbière en forêt près de La Bresse.
+Gorges de la Murg	gorge	Forêt-Noire	DE	Murgtal, Forbach	Vallée encaissée de la Murg.
+Zauberwald-Pfad	lieu	Forêt-Noire	DE	Zauberwaldpfad	Sentier en forêt parmi les blocs moussus.
+Hinterzartener Moor	lieu	Forêt-Noire	DE	Hinterzartener Moor	Grande tourbière près de Hinterzarten.
+Wildseemoor	lieu	Forêt-Noire	DE	Wildseemoor, Kaltenbronn	Tourbière d'altitude avec passerelles.
+Horbacher Moor	lieu	Forêt-Noire	DE	Horbacher Moor	Tourbière d'altitude près de Todtmoos.
+Höchenschwander Moor	lieu	Forêt-Noire	DE	Höchenschwander Moor	Tourbière sur le plateau de Höchenschwand.
+Pertes de la Valserine	gorge	Jura	FR	Pertes de la Valserine	La rivière disparaît dans des marmites de calcaire.
+Source du Lison	cascade	Jura	FR	Source du Lison	Résurgence au fond d'une grotte, avec sa cascade.
+Tourbière des Rousses	lieu	Jura	FR	Tourbière des Rousses	Tourbière près du lac des Rousses.
+Tourbières du Bief de Nanchez	lieu	Jura	FR	Bief de Nanchez	Tourbières et étangs du haut Jura.
+Combe du Lac	lieu	Jura	FR	Combe du Lac, Lamoura	Combe tourbeuse du haut Jura.
+Grotte Saint-Léon	grotte	Vosges	FR	Grotte Saint-Léon, Dabo	Abri sous roche au pied du rocher de Dabo.
+Grotte du Brotsch	grotte	Vosges	FR	Grotte du Brotsch	Cavité gréseuse en forêt près du Brotsch.
+Erdmannshöhle	grotte	Forêt-Noire	DE	Erdmannshöhle, Hasel	Grotte à concrétions, ouverte à la visite.
+Edelfrauengrab	cascade	Forêt-Noire	DE	Edelfrauengrab, Ottenhöfen	Gorge à cascades et abri rocheux près d'Ottenhöfen.
+Grotte Sarrasine	grotte	Jura	FR	Grotte Sarrasine, Nans-sous-Sainte-Anne	Immense porche d'où jaillit le Lison en crue.
+Grotte des Faux-Monnayeurs	grotte	Jura	FR	Grotte des Faux-Monnayeurs, Mouthier-Haute-Pierre	Grotte dans la falaise au-dessus de la Loue.
+Fort de Mutzig	chateau	Vosges	FR	Fort de Mutzig, Feste Kaiser Wilhelm II	Fort de 1893 en forêt sur une colline, loin du centre de Mutzig.
