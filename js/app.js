@@ -143,5 +143,15 @@ function healViewport() {
   }, 120);
 }
 document.addEventListener('focusout', healViewport);
+// La page elle-même ne défile jamais (seuls ses panneaux défilent). Si un défilement automatique l'a décalée,
+// par exemple en amenant un élément à l'écran, on la remet en place : sinon une bande vide apparaît en bas.
+let fixing = 0;
+window.addEventListener('scroll', () => {
+  const se = document.scrollingElement || document.documentElement;
+  if (!se.scrollTop && !document.body.scrollTop) return;
+  if (document.activeElement && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) return;
+  clearTimeout(fixing);
+  fixing = setTimeout(() => { se.scrollTop = 0; document.body.scrollTop = 0; window.scrollTo(0, 0); map.invalidateSize(); }, 150);
+}, { passive: true });
 if (window.visualViewport) window.visualViewport.addEventListener('resize', healViewport);
 window.addEventListener('orientationchange', healViewport);

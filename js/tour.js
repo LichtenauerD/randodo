@@ -245,6 +245,7 @@ function end(finished) {
   removeEventListener('resize', T.onResize);
   document.removeEventListener('scroll', T.onResize, true);
   T.root.remove();
+  window.scrollTo(0, 0); document.documentElement.scrollTop = 0; document.body.scrollTop = 0;
   if (isGuiding()) stopGuide();
   if (T.hike && store.isSaved(T.hike.id) && !T.hadSaved) store.removeHike(T.hike.id);
   T = null;
