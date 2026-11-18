@@ -351,6 +351,7 @@ export function showTab(t) {
   render();
 }
 function render() {
+  page().dataset.view = tab;
   if (tab === 'accueil') renderHome(page());
   else if (tab === 'objectifs') renderObjectifs(page());
   else if (tab === 'traces') renderTraces();

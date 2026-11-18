@@ -360,6 +360,8 @@ export async function renderHome(el) {
   const origin = getOrigin();
   const { picks } = weeklyPicks(origin);
   const web = await webIdeas(false);
+  // Un autre onglet a pu s'ouvrir pendant l'attente : on n'écrase pas sa page.
+  if (el.dataset.view && el.dataset.view !== 'accueil') return;
   const name = settings.get('pseudo', '').trim();
   el.innerHTML = `<div class="home">
     <header class="hello"><img src="icons/icon-192.png" alt="" width="56" height="56"><h1>Salut${name ? ' ' + esc(name) : ''}</h1><p class="slogan">Le dodo ne vole pas. Il marche. Et toi ?</p>
