@@ -622,7 +622,16 @@ function renderSettings() {
   };
   $('#s-import', p).onclick = () => $('#s-file', p).click();
   $('#s-file', p).onchange = async (e) => {
-    try { const r = await store.importAll(await e.target.files[0].text()); toast(`Sauvegarde importée : ${r.log} randos, ${r.hikes} traces.`); } catch (err) { toast(err.message, 5000); }
+    try {
+      const text = await e.target.files[0].text();
+      let d = null; try { d = JSON.parse(text); } catch { /* importAll signale l'erreur */ }
+      // Identité de groupe différente : la provisoire (créée depuis la réinstallation) quitte d'abord la communauté.
+      if (d && d.deviceKey && d.deviceKey !== deviceKey() && communityChoice() === 'oui' && groupAddress()) { try { await post({ action: 'leave', owner: deviceKey() }); } catch { /* tant pis */ } }
+      const r = await store.importAll(text);
+      if (d && d.deviceKey) { await register(); pushProgress(true); }
+      toast(`Sauvegarde importée : ${r.log} randos, ${r.hikes} traces.`);
+      renderSettings();
+    } catch (err) { toast(err.message, 5000); }
   };
   $('#s-diag', p).onclick = () => runDiag($('#diag', p));
   $('#s-demo', p).onclick = () => {

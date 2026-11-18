@@ -96,7 +96,8 @@ export const store = {
     await kv.set('log', this.log); await kv.set('wish', this.wish); await kv.set('visited', this.visited);
     for (const h of d.hikes || []) if (!this.isSaved(h.id)) await this.saveHike(h);
     // Même identité dans le groupe qu'avant (utile après avoir réinstallé l'appli).
-    if (d.pseudo && !settings.get('pseudo', '')) settings.set('pseudo', d.pseudo);
+    // Avec l'identité du groupe, on reprend aussi le prénom qui allait avec.
+    if (d.pseudo && (d.deviceKey || !settings.get('pseudo', ''))) settings.set('pseudo', d.pseudo);
     if (d.deviceKey) { settings.set('deviceKey', d.deviceKey); settings.set('joined', ''); settings.set('progressSent', ''); }
     if (d.community) settings.set('community', d.community);
     if (d.lastGrade != null) settings.set('lastGrade', d.lastGrade);
