@@ -505,12 +505,24 @@ ol.grades li span { display: flex; flex-direction: column; } ol.grades small { c
 .walker .w-body, .walker .w-leg { transform-box: fill-box; }
 .walker .w-body { transform-origin: 50% 100%; }
 .walker .w-leg { transform-origin: 50% 0; }
-.walker.walking .w-body { animation: waddle .42s ease-in-out infinite alternate; }
-.walker.walking .w-leg-a { animation: stride .42s ease-in-out infinite alternate; }
-.walker.walking .w-leg-b { animation: stride .42s ease-in-out infinite alternate-reverse; }
-.walker.walking .w-wing { animation: flap .21s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: 80% 20%; }
+.walker.walking .w-body { animation: waddle .6s ease-in-out infinite alternate; }
+.walker.walking .w-leg-a { animation: stride .6s ease-in-out infinite alternate; }
+.walker.walking .w-leg-b { animation: stride .6s ease-in-out infinite alternate-reverse; }
+.walker.walking .w-wing { animation: flap .3s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: 80% 20%; }
 .walker.idle .w-eye { animation: blink 4s infinite; transform-box: fill-box; transform-origin: center; }
-.walker.arrived .walker-art { animation: arrive .5s ease-out; }
+.walker .w-wings { opacity: 0; }
+.walker .w-wing-l, .walker .w-wing-r { transform-box: fill-box; }
+.walker .w-wing-l { transform-origin: 100% 80%; } .walker .w-wing-r { transform-origin: 0 80%; }
+.walker.tryfly .walker-art { animation: tryfly 2.4s cubic-bezier(.35,0,.4,1) forwards; }
+.walker.tryfly .w-wings { opacity: 1; animation: wingsout 2.4s forwards; }
+.walker.tryfly .w-wing-l { animation: flapl .12s ease-in-out infinite alternate; }
+.walker.tryfly .w-wing-r { animation: flapr .12s ease-in-out infinite alternate; }
+.walker.tryfly .w-leg-a, .walker.tryfly .w-leg-b { animation: kick .18s ease-in-out infinite alternate; transform-origin: 50% 0; }
+@keyframes tryfly { 0% { transform: translateY(0); } 12% { transform: translateY(3px) scaleY(.92); } 30% { transform: translateY(-14px) rotate(-6deg); } 45% { transform: translateY(-22px) rotate(4deg); } 58% { transform: translateY(-19px) rotate(-5deg); } 68% { transform: translateY(-24px) rotate(3deg); } 80% { transform: translateY(0) rotate(0); } 86% { transform: translateY(2px) scaleY(.88); } 93% { transform: translateY(-5px); } 100% { transform: translateY(0); } }
+@keyframes wingsout { 0%, 8% { opacity: 0; } 14%, 76% { opacity: 1; } 84%, 100% { opacity: 0; } }
+@keyframes flapl { from { transform: rotate(25deg); } to { transform: rotate(-30deg); } }
+@keyframes flapr { from { transform: rotate(-25deg); } to { transform: rotate(30deg); } }
+@keyframes kick { from { transform: rotate(-15deg); } to { transform: rotate(15deg); } }
 .walker.hop .walker-art { animation: hop .55s cubic-bezier(.3,1.6,.5,1); }
 .walker-say { position: absolute; right: 36px; bottom: 52px; white-space: nowrap; padding: 6px 10px; border-radius: 12px 12px 2px 12px; background: #fff; color: var(--sapin); font: 600 .82rem var(--sign); box-shadow: 0 4px 14px rgba(20,33,27,.18); animation: fadein .2s; }
 @keyframes waddle { from { transform: rotate(-6deg) translateY(0); } to { transform: rotate(6deg) translateY(-2px); } }
@@ -519,4 +531,4 @@ ol.grades li span { display: flex; flex-direction: column; } ol.grades small { c
 @keyframes blink { 0%, 92%, 100% { transform: scaleY(1); } 95% { transform: scaleY(.1); } }
 @keyframes arrive { 0% { transform: translateY(0); } 40% { transform: translateY(-9px); } 100% { transform: translateY(0); } }
 @keyframes hop { 0% { transform: translateY(0) rotate(0); } 45% { transform: translateY(-16px) rotate(-8deg); } 100% { transform: translateY(0) rotate(0); } }
-@media (prefers-reduced-motion: reduce) { .walker .w-body, .walker .w-leg, .walker-art { animation: none !important; } }
+@media (prefers-reduced-motion: reduce) { .walker .w-body, .walker .w-leg, .walker-art, .walker .w-wings, .walker .w-wing-l, .walker .w-wing-r { animation: none !important; } }

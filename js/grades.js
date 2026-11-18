@@ -107,6 +107,7 @@ export function animateClimber(svg, ms = 4200) {
 // Dodo marcheur de l'accueil, de profil, chapeau de rando sur la tête. Pattes séparées pour l'animation.
 export function walkerSvg(size = 46) {
   return `<svg class="walker-art" viewBox="0 0 64 64" width="${size}" height="${size}" aria-hidden="true">
+    <g class="w-wings"><path class="w-wing-l" d="M20 36c-10-12-20-12-24-4 6-1 12 1 18 7z" fill="${C.body}" stroke="${C.dark}" stroke-width="1.2"/><path class="w-wing-r" d="M40 36c8-13 18-14 22-6-6-1-11 1-16 7z" fill="${C.body}" stroke="${C.dark}" stroke-width="1.2"/></g>
     <g class="w-body">
       <ellipse cx="30" cy="40" rx="15" ry="13" fill="${C.body}"/>
       <ellipse cx="33" cy="44" rx="9" ry="8" fill="${C.belly}"/>

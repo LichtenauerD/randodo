@@ -134,14 +134,19 @@ function startWalker(hello) {
     box.classList.add('waiting');
     setTimeout(() => {
       box.classList.remove('waiting'); box.classList.add('walking');
-      const t0 = performance.now(), dur = 6500;
+      const t0 = performance.now(), dur = 11000;
       const step = (t) => {
         if (!box.isConnected) return;
         const k = Math.min(1, (t - t0) / dur);
         p = 0.03 + (end - 0.03) * k;
         place();
         if (k < 1) requestAnimationFrame(step);
-        else { box.classList.remove('walking'); box.classList.add('idle', 'arrived'); try { sessionStorage.setItem('randodo.walked', '1'); } catch { /* rien */ } }
+        else {
+          // Arrivé à la balise : il tente de s'envoler, bat des ailes… et retombe.
+          box.classList.remove('walking'); box.classList.add('tryfly');
+          setTimeout(() => { box.classList.remove('tryfly'); box.classList.add('idle'); }, 2400);
+          try { sessionStorage.setItem('randodo.walked', '1'); } catch { /* rien */ }
+        }
       };
       requestAnimationFrame(step);
     }, 1900);
