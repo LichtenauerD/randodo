@@ -16,7 +16,7 @@ export const GROUPS = [
   { id: 'lac', short: 'Lacs', phrase: 'des lacs', label: 'Lacs', types: ['lac'], icon: 'lac' },
   { id: 'vue', short: 'Sommets', phrase: 'des sommets et des points de vue', label: 'Sommets et points de vue', types: ['sommet', 'vue'], icon: 'sommet' },
   { id: 'ruine', short: 'Châteaux', phrase: 'des châteaux et des ruines', label: 'Châteaux et ruines', types: ['chateau'], icon: 'chateau' },
-  { id: 'roche', short: 'Rochers', phrase: 'des rochers et des grottes', label: 'Rochers et grottes', types: ['rocher', 'grotte'], icon: 'rocher' },
+  { id: 'roche', short: 'Grottes & Rochers', phrase: 'des grottes et des rochers', label: 'Grottes et rochers', types: ['rocher', 'grotte'], icon: 'rocher' },
   { id: 'abri', short: 'Refuges', phrase: 'des refuges isolés', label: 'Refuges et bâtiments isolés', types: ['refuge'], icon: 'refuge' },
 ];
 const DURATIONS = [[30, '30 min'], [60, '1 h'], [90, '1 h 30'], [120, '2 h'], [180, '3 h']];

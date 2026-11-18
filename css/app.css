@@ -370,3 +370,4 @@ button:active:not(:disabled) { transform: scale(.97); }
 .me { position: relative; }
 .me-ring { position: absolute; inset: -3px; border-radius: 50%; background: rgba(26,115,232,.45); z-index: -1; }
 .motto { font: 700 1.15rem/1.25 var(--sign); color: var(--violet); margin: 4px 0 10px; }
+.fgrid button { line-height: 1.1; text-align: center; }
