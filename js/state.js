@@ -82,7 +82,7 @@ export const store = {
   isSaved(id) { return this.hikes.some((x) => x.id === id); },
   // Sauvegarde complète, pour changer de téléphone ou garder une copie.
   async exportAll() {
-    return JSON.stringify({ app: 'randodo', version: 1, date: new Date().toISOString(), log: this.log, wish: this.wish, visited: this.visited, hikes: this.hikes, want, pseudo: settings.get('pseudo', '') });
+    return JSON.stringify({ app: 'randodo', version: 1, date: new Date().toISOString(), log: this.log, wish: this.wish, visited: this.visited, hikes: this.hikes, want, pseudo: settings.get('pseudo', ''), deviceKey: settings.get('deviceKey', ''), community: settings.get('community', ''), lastGrade: settings.get('lastGrade', null) });
   },
   async importAll(text) {
     const d = JSON.parse(text);
@@ -95,6 +95,11 @@ export const store = {
     this.visited = { ...(d.visited || {}), ...this.visited };
     await kv.set('log', this.log); await kv.set('wish', this.wish); await kv.set('visited', this.visited);
     for (const h of d.hikes || []) if (!this.isSaved(h.id)) await this.saveHike(h);
+    // Même identité dans le groupe qu'avant (utile après avoir réinstallé l'appli).
+    if (d.pseudo && !settings.get('pseudo', '')) settings.set('pseudo', d.pseudo);
+    if (d.deviceKey) { settings.set('deviceKey', d.deviceKey); settings.set('joined', ''); settings.set('progressSent', ''); }
+    if (d.community) settings.set('community', d.community);
+    if (d.lastGrade != null) settings.set('lastGrade', d.lastGrade);
     bus.emit('log'); bus.emit('wish');
     return { log: (d.log || []).length, hikes: (d.hikes || []).length };
   },

@@ -155,27 +155,3 @@ window.addEventListener('scroll', () => {
 }, { passive: true });
 if (window.visualViewport) window.visualViewport.addEventListener('resize', healViewport);
 window.addEventListener('orientationchange', healViewport);
-
-// iOS en mode installé : après le clavier (ou un retour d'arrière-plan), la fenêtre peut rester rétrécie
-// et laisser une bande vide en bas. On force WebKit à la remesurer en masquant puis réaffichant la page.
-let maxVH = innerHeight;
-function remeasure() {
-  maxVH = Math.max(maxVH, innerHeight);
-  const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
-  if (!standalone) return;
-  const full = innerWidth < innerHeight ? Math.max(screen.width, screen.height) : Math.min(screen.width, screen.height);
-  if (Math.max(maxVH, full) - innerHeight <= 4) return;
-  const b = document.body;
-  const keep = [...document.querySelectorAll('#page, .sheet .body')].map((el) => [el, el.scrollTop]);
-  b.style.display = 'none';
-  void b.offsetHeight;
-  b.style.display = '';
-  keep.forEach(([el, t]) => { el.scrollTop = t; });
-  maxVH = Math.max(maxVH, innerHeight);
-  map.invalidateSize();
-}
-addEventListener('resize', () => { maxVH = Math.max(maxVH, innerHeight); });
-document.addEventListener('focusout', (e) => { if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) { setTimeout(remeasure, 140); setTimeout(remeasure, 600); } });
-document.addEventListener('visibilitychange', () => { if (!document.hidden) setTimeout(remeasure, 200); });
-addEventListener('pageshow', () => setTimeout(remeasure, 200));
-setTimeout(remeasure, 800);

@@ -407,7 +407,8 @@ function openProfile(m, entries) {
     <h3>Ses randos</h3>
     ${mine.map((e, i) => `<div class="pf-row" data-i="${i}"><b>${lvDot(e.level)}${esc(e.placeName)}</b><small>${frDate(e.date)}${e.km ? ', ' + String(Math.round(e.km * 10) / 10).replace('.', ',') + ' km' : ''}${e.rating ? ', ' + e.rating + '/5' : ''}</small>${e.note ? `<p>${esc(e.note)}</p>` : ''}${e.lat != null ? '<button type="button" class="btn small" data-a="map">Voir sur la carte</button>' : ''}</div>`).join('') || '<p class="meta">Aucune rando partagée pour l\'instant.</p>'}
     ${places.length ? `<h3>Ses lieux cochés</h3><p class="pf-places">${places.map((s) => esc(s.name)).join(', ')}</p>` : ''}
-    <div class="foot"><button type="button" class="btn main" id="pf-close">Fermer</button></div></div>`);
+    <div class="foot"><button type="button" class="btn main" id="pf-close" style="width:100%">Fermer</button></div></div>`);
+  box.classList.add('tall');
   $('#pf-close', box).onclick = closeModal;
   box.querySelectorAll('[data-a=map]').forEach((b) => {
     b.onclick = () => { const e = mine[+b.closest('.pf-row').dataset.i]; closeModal(); goTab('carte'); openPlace({ id: 'g' + e.id, name: e.placeName, type: 'lieu', lat: e.lat, lon: e.lon, score: 0 }); };

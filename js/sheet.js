@@ -92,7 +92,12 @@ function headHtml(p) {
     <button type="button" class="chip${done ? ' on' : ''}" id="q-done">${IC.check}${done ? 'Faite le ' + frDate(done.date) : 'Déjà faite'}</button>
   </div>`;
 }
-export const frDate = (iso) => { const [y, m, d] = (iso || '').split('-'); return d ? `${d}/${m}/${y}` : iso || ''; };
+export const frDate = (iso) => {
+  let s = String(iso || '');
+  // Date complète venue de la feuille du groupe (« 2026-11-16T23:00:00.000Z ») : on la ramène au jour local.
+  if (s.includes('T')) { const t = new Date(s); if (!isNaN(t)) s = `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`; }
+  const [y, m, d] = s.split('-'); return d ? `${d.slice(0, 2)}/${m}/${y}` : s;
+};
 
 function fill(tpl, p) {
   const dLat = 0.035, dLon = 0.05;
