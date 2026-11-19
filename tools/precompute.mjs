@@ -51,7 +51,7 @@ for (const site of order) {
     }
     const data = { v: r.v, hikes: r.hikes, passing: r.passing, partial: r.partial, reason: r.reason, noEle: false };
     await writeFile(join(outDir, slug + '.json'), JSON.stringify(data));
-    dates[slug] = new Date().toISOString().slice(0, 10);
+    dates[slug] = new Date().toISOString(); // date et heure : l'ordre « plus ancien d'abord » reste juste d'un passage à l'autre
     index[slug] = r.hikes.map((h) => ({ level: h.level, km: +(h.meters / 1000).toFixed(1), up: h.up, min: h.minutes }));
     done++;
     console.log(`ok   ${site.name} : ${r.hikes.length} randos (${((Date.now() - t0) / 1000).toFixed(0)} s)`);
