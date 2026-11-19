@@ -41,7 +41,12 @@ jobs:
         env:
           ONLY: ${{ github.event.inputs.only }}
           LIMIT: ${{ github.event.inputs.limit }}
-        run: node tools/precompute.mjs
+          SAVE_EVERY: 8
+          NODE_OPTIONS: --max-old-space-size=8192
+        run: |
+          git config user.name "randodo-bot"
+          git config user.email "randodo-bot@users.noreply.github.com"
+          node tools/precompute.mjs
       - name: Enregistrement
         if: always()
         run: |

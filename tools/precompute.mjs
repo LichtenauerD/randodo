@@ -1,6 +1,7 @@
 // Précalcule les randos des lieux du catalogue (data/sites.js) dans data/hikes/.
 // Lancé chaque semaine par GitHub Actions (.github/workflows/randos.yml), ou à la main : node tools/precompute.mjs
 // Variables : MOCK=http://127.0.0.1:8765 (tests), ONLY=nom1,nom2, LIMIT=5, PAUSE=6000 (ms entre deux lieux).
+import { execSync } from 'node:child_process';
 import { mkdir, writeFile, readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -28,7 +29,17 @@ const round = (pts) => pts.map(([a, b]) => [+a.toFixed(5), +b.toFixed(5)]);
 let index = {};
 try { index = JSON.parse(await readFile(join(outDir, 'index.json'), 'utf8')); } catch { /* premier passage */ }
 
-let done = 0, failed = 0;
+let done = 0, failed = 0, lastSaved = 0;
+const saveEvery = +process.env.SAVE_EVERY || 0;
+function save(msg) {
+  try {
+    execSync('git add data/hikes', { cwd: root });
+    try { execSync('git diff --cached --quiet', { cwd: root }); return; } catch { /* il y a du nouveau */ }
+    execSync(`git commit -q -m "${msg}"`, { cwd: root });
+    execSync('git pull --rebase -q && git push -q', { cwd: root, shell: '/bin/bash' });
+    console.log('     (enregistré)');
+  } catch (e) { console.log('     enregistrement intermédiaire impossible : ' + e.message.split('\n')[0]); }
+}
 // Les lieux sans fichier passent d'abord, puis les plus anciens : chaque passage avance là où le précédent s'est arrêté.
 let dates = {};
 try { dates = JSON.parse(await readFile(join(outDir, 'dates.json'), 'utf8')); } catch { /* premier passage */ }
@@ -62,6 +73,8 @@ for (const site of order) {
   if (pause) await new Promise((res) => setTimeout(res, pause));
   await writeFile(join(outDir, 'index.json'), JSON.stringify(index));
   await writeFile(join(outDir, 'dates.json'), JSON.stringify(dates));
+  // Enregistrement régulier : si la machine de GitHub s'arrête en route, le travail déjà fait est gardé.
+  if (saveEvery && done && done % saveEvery === 0 && done !== lastSaved) { lastSaved = done; save(`Randos précalculées (${done} lieux)`); }
 }
 await writeFile(join(outDir, 'index.json'), JSON.stringify(index));
 console.log(`${done} lieux calculés, ${failed} ratés.`);
