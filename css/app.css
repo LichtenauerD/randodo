@@ -673,3 +673,6 @@ details.adv { margin-top: 10px; } details.adv summary { color: var(--gris); font
 @keyframes slide-r { from { transform: translateX(-36px); opacity: .4; } to { transform: none; opacity: 1; } }
 .page.slide-l { animation: slide-l .22s ease-out; } .page.slide-r { animation: slide-r .22s ease-out; }
 @media (prefers-reduced-motion: reduce) { .page.slide-l, .page.slide-r { animation: none; } }
+
+/* Encadré saisonnier sur la fiche d'un lieu */
+.caution { margin: 8px 0 0; padding: 7px 10px; border-radius: 8px; background: #fff4dc; border: 1px solid #ecd39a; color: #6b4e12; font-size: 0.86rem; line-height: 1.35; }

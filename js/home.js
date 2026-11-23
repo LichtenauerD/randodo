@@ -1,5 +1,5 @@
 // Accueil : suggestions de la semaine, idées repérées sur le web, recherche guidée par temps de route.
-import { CONFIG, TYPES } from './config.js';
+import { CONFIG, TYPES, HIGH } from './config.js';
 import { SITES, imageOf, fetchImages, searchRemote } from './places.js';
 import { store, want, saveWant } from './state.js';
 import { openPlace } from './sheet.js';
@@ -24,8 +24,6 @@ export const GROUPS = [
   { id: 'nature', short: 'Forêts & marais', phrase: 'des forêts et des marais', label: 'Forêts et marais', types: ['tourbiere'], icon: 'tourbiere' },
 ];
 const DURATIONS = [[30, '30 min'], [60, '1 h'], [90, '1 h 30'], [120, '2 h'], [180, '3 h']];
-// Sites d'altitude, écartés des suggestions de novembre à avril.
-const HIGH = new Set(['Säntis', 'Bachalpsee', 'Oeschinensee', 'Niesen', 'Pilatus', 'Grosser Mythen', 'Fronalpstock', 'Moléson', 'Rigi', 'Seealpsee', 'Ebenalp et Aescher', 'Schwarzsee', 'Sentier des Roches', 'Chasseral', 'Chasseron', 'Lac des Perches', 'Lac de Derborence', 'Lac Bleu d\'Arolla', 'Lac de Taney', 'Rochers de Naye', 'Monte Generoso', 'Bisse du Ro']);
 
 let goTab = () => {};
 let host = null;
@@ -95,7 +93,9 @@ function drawPicks(origin) {
   const winter = month >= 11 || month <= 4;
   const maxMin = settings.get('search', {}).minutes || 120;
   let pool = SITES.filter((s) => !store.isDone(s) && !(winter && HIGH.has(s.name)));
-  if (origin) pool = pool.map((s) => ({ s, min: estMinutes(dist([origin.lat, origin.lon], [s.lat, s.lon]) / 1000) })).filter((x) => x.min <= Math.max(maxMin, 90)).map((x) => Object.assign(x.s, { _min: x.min }));
+  // Les idées restent à portée : temps de route depuis la position, ou à défaut depuis le centre de la carte.
+  const from = origin || CONFIG.home;
+  pool = pool.map((s) => ({ s, min: estMinutes(dist([from.lat, from.lon], [s.lat, s.lon]) / 1000) })).filter((x) => x.min <= Math.max(maxMin, 90)).map((x) => (origin ? Object.assign(x.s, { _min: x.min }) : x.s));
   const rnd = seeded(isoWeek());
   const shuffled = pool.map((s) => [rnd(), s]).sort((a, b) => a[0] - b[0]).map((x) => x[1]);
   const out = [], types = new Set();

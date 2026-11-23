@@ -4,7 +4,7 @@ const params = new URLSearchParams(location.search);
 // Mode test : ?mock=http://localhost:8765 remplace tous les services par un serveur local.
 const MOCK = params.get('mock') || '';
 
-export const VERSION = '1.8.10';
+export const VERSION = '1.8.11';
 
 export const CONFIG = {
   mock: MOCK,
@@ -113,3 +113,21 @@ export const TYPES = {
   refuge: { label: 'Refuges', one: 'Refuge', color: '#8a6a1f' },
   lieu: { label: 'Autres lieux', one: 'Lieu', color: '#55606a' },
 };
+
+// Sites d'altitude : neige possible l'hiver, écartés des idées de la semaine de novembre à avril.
+export const HIGH = new Set(['Säntis', 'Bachalpsee', 'Oeschinensee', 'Niesen', 'Pilatus', 'Grosser Mythen', 'Fronalpstock', 'Moléson', 'Rigi', 'Seealpsee', 'Ebenalp et Aescher', 'Schwarzsee', 'Sentier des Roches', 'Chasseral', 'Chasseron', 'Lac des Perches', 'Lac de Derborence', 'Lac Bleu d\'Arolla', 'Lac de Taney', 'Rochers de Naye', 'Monte Generoso', 'Bisse du Ro']);
+// Lieux fermés ou inaccessibles une partie de l'année : encadré « attention » sur la fiche.
+const CAVE = 'Grotte fermée en hiver. Vérifie les dates d\'ouverture avant de partir.';
+export const SEASON_NOTES = {
+  'Chutes de Trümmelbach': 'Fermées en hiver, ouvertes en général d\'avril à début novembre.',
+  'Gorges du Trient': 'Fermées en hiver, ouvertes de mai à octobre.',
+  'Gorges de la Tamina': 'Fermées en hiver, ouvertes de mai à octobre.',
+  'Aareschlucht': 'Fermée en hiver, ouverte en général d\'avril à octobre.',
+  'Lac de Derborence': 'Route d\'accès fermée en hiver.',
+  'Grottes de Saint-Béat': CAVE, 'Grottes de Vallorbe': CAVE, 'Höllgrotten': CAVE, 'Grotte aux Fées': CAVE, 'Erdmannshöhle': CAVE,
+};
+export function seasonNote(p) {
+  const n = SEASON_NOTES[p.name];
+  if (n) return n;
+  return HIGH.has(p.name) ? 'Site d\'altitude : neige possible de novembre à avril, certains sentiers peuvent être fermés.' : '';
+}
