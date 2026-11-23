@@ -242,6 +242,25 @@ const RAW = [
   ['Geissfels', 'rocher', 48.6715, 7.2913, 'Vosges', 'FR', 'Rocher-belvédère en grès à 600 m au-dessus de Reinhardsmunster, face au rocher de Dabo.'],
   ['Grotte Saint-Vit et Rappenfels', 'grotte', 48.7294, 7.3226, 'Vosges', 'FR', 'Grotte-chapelle sous un gros rocher, jardin alpestre et vue sur le Haut-Barr ; le piton du Rappenfels est tout proche.'],
   ['Château du Grand-Geroldseck', 'chateau', 48.7189, 7.3322, 'Vosges', 'FR', 'Ruine au donjon carré sur un éperon au-dessus de Haegen, à deux pas du Haut-Barr.'],
+  // ---------- Ajouts de novembre 2026 : Suisse (liste de Dorian) ----------
+  ['Caumasee', 'lac', 46.8202, 9.2963, 'Suisse', 'CH', 'Lac aux eaux turquoise entouré de forêt, près de Flims.'],
+  ['Crestasee', 'lac', 46.8313, 9.3210, 'Suisse', 'CH', 'Lac forestier aux eaux limpides, relié au Caumasee par un sentier en sous-bois.'],
+  ['Lac de Derborence', 'lac', 46.2791, 7.2170, 'Suisse', 'CH', 'Lac né des éboulements du XVIIIe siècle, bordé par une forêt laissée à l\'état sauvage. Route fermée en hiver.'],
+  ['Lac Bleu d\'Arolla', 'lac', 46.0507, 7.4801, 'Suisse', 'CH', 'Petit lac alpin d\'un bleu intense, à pied depuis La Gouille. Terrain de montagne.'],
+  ['Lac de Taney', 'lac', 46.3455, 6.8405, 'Suisse', 'CH', 'Lac de montagne au-dessus de Vouvry, au pied du Grammont.'],
+  ['Chutes de Trümmelbach', 'cascade', 46.5700, 7.9132, 'Suisse', 'CH', 'Dix chutes glaciaires creusées dans la roche, dans la vallée de Lauterbrunnen. Visite payante, d\'avril à novembre.'],
+  ['Chutes du Giessbach', 'cascade', 46.7336, 8.0238, 'Suisse', 'CH', 'Cascades en 14 paliers au-dessus du lac de Brienz, avec un sentier qui passe derrière l\'une des chutes.'],
+  ['Cascade de Foroglio', 'cascade', 46.3710, 8.5446, 'Suisse', 'CH', 'Chute de plus de 100 m au-dessus du village de pierre de Foroglio, dans le val Bavona.'],
+  ['Gorges du Trient', 'gorge', 46.1310, 7.0427, 'Suisse', 'CH', 'Faille étroite et profonde parcourue par des passerelles, à Vernayaz. Visite payante, de mai à octobre.'],
+  ['Viamala', 'gorge', 46.6631, 9.4473, 'Suisse', 'CH', 'Gorges du Rhin postérieur, descente par un escalier de plus de 300 marches.'],
+  ['Gorges de la Tamina', 'gorge', 46.9725, 9.4882, 'Suisse', 'CH', 'Gorges profondes au-dessus de Bad Ragaz, jusqu\'à la source thermale et l\'ancien bain de Pfäfers. Ouvertes de mai à octobre.'],
+  ['Grottes de Saint-Béat', 'grotte', 46.6847, 7.7823, 'Suisse', 'CH', 'Grottes karstiques au-dessus du lac de Thoune, avec rivière et cascades souterraines. Visite payante.'],
+  ['Grottes de Vallorbe', 'grotte', 46.6983, 6.3458, 'Jura', 'CH', 'Grottes creusées par l\'Orbe, riches en concrétions. Visite payante.'],
+  ['Höllgrotten', 'grotte', 47.1889, 8.5579, 'Suisse', 'CH', 'Grottes de tuf calcaire dans la vallée de la Lorze, près de Baar. Visite payante.'],
+  ['Grotte aux Fées', 'grotte', 46.2234, 7.0013, 'Suisse', 'CH', 'Grotte au-dessus de Saint-Maurice, avec une cascade et un lac souterrains. Visite payante.'],
+  ['Rochers de Naye', 'sommet', 46.4318, 6.9761, 'Suisse', 'CH', 'Sommet à 2 042 m au-dessus de Montreux, panorama sur le Léman et les Alpes. Terrain de montagne.'],
+  ['Monte Generoso', 'sommet', 45.9313, 9.0199, 'Suisse', 'CH', 'Sommet du sud du Tessin, au-dessus du lac de Lugano. Terrain de montagne.'],
+  ['Bisse du Ro', 'vue', 46.3317, 7.4616, 'Suisse', 'CH', 'Ancien canal d\'irrigation au-dessus de Crans-Montana, sentier à flanc de falaise. Passages exposés.'],
 ];
 
 export const SITES = RAW.map(([name, type, lat, lon, massif, country, desc], i) => ({
