@@ -11,7 +11,17 @@ const UA = 'Randodo/1.6 (+https://github.com/LichtenauerD/randodo)';
 const OUT = 'photo-candidates';
 await mkdir(OUT, { recursive: true });
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-const get = async (u) => { const r = await fetch(u, { headers: { 'User-Agent': UA } }); if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); };
+// Wikimedia limite le débit : sur un refus 429, on attend puis on réessaie.
+const get = async (u) => {
+  for (const wait of [0, 5000, 20000, 60000]) {
+    if (wait) { console.log(`  (pause ${wait / 1000} s, débit limité)`); await sleep(wait); }
+    const r = await fetch(u, { headers: { 'User-Agent': UA } });
+    if (r.status === 429) continue;
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return r.json();
+  }
+  throw new Error('HTTP 429');
+};
 const api = (host, params) => get(`https://${host}/w/api.php?` + new URLSearchParams({ format: 'json', origin: '*', ...params }));
 const strip = (h) => (h || '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim().slice(0, 120);
 const only = (process.env.ONLY || '').split(',').map((s) => s.trim()).filter(Boolean);
@@ -73,6 +83,6 @@ for (const site of SITES) {
     await sleep(300);
   }
   console.log(`${site.name} : ${k} photo(s)`);
-  await sleep(400);
+  await sleep(3000);
 }
 await writeFile(join(OUT, 'index.json'), JSON.stringify(index, null, 1));
