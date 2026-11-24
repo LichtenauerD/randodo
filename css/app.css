@@ -177,7 +177,7 @@ body.guiding #btn-layer { display: none; }
 body.guiding .sheet { display: none; }
 
 /* ---------- Pages ---------- */
-.page { position: fixed; z-index: 550; inset: 0 0 var(--tabs) 0; background: var(--brume); overflow: auto; -webkit-overflow-scrolling: touch; padding: calc(var(--top) + 18px) 16px 28px; }
+.page { position: fixed; z-index: 550; inset: 0; background: var(--brume); overflow: auto; -webkit-overflow-scrolling: touch; padding: calc(var(--top) + 18px) 16px calc(var(--tabs) + 28px); will-change: transform; }
 .page > h2 { margin-bottom: 4px; }
 .page .lead { color: var(--gris); margin-bottom: 16px; font-size: 0.93rem; }
 .seg { display: flex; background: rgba(20, 33, 27, 0.08); border-radius: 12px; padding: 3px; margin: 14px 0; }
@@ -221,7 +221,15 @@ body.guiding .sheet { display: none; }
 #tabs button { color: rgba(255, 255, 255, 0.62); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font: 600 0.7rem var(--sign); min-width: 0; position: relative; }
 #tabs svg { width: 23px; height: 23px; }
 #tabs button.on { color: #fff; }
-#tabs button.on::before { content: ""; position: absolute; top: 0; width: 34px; height: 3px; border-radius: 0 0 3px 3px; background: var(--balise); }
+/* Effet « verre liquide » : barre translucide et floutée, pastille de verre qui glisse sous l'onglet actif. */
+#tabs { --i: 0; background: rgba(23, 59, 47, .86); -webkit-backdrop-filter: blur(22px) saturate(170%); backdrop-filter: blur(22px) saturate(170%); border-top: 1px solid rgba(255, 255, 255, .16); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .10), 0 -6px 24px rgba(10, 30, 22, .18); }
+#tabs::before { content: ""; position: absolute; top: 5px; height: 48px; left: calc(var(--i) * 100% / 6 + 5px); width: calc(100% / 6 - 10px); border-radius: 16px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .26), rgba(255, 255, 255, .08)); border: 1px solid rgba(255, 255, 255, .28);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, .45), inset 0 -2px 6px rgba(255, 255, 255, .06), 0 6px 16px rgba(0, 0, 0, .22);
+  transition: left .5s cubic-bezier(.3, 1.4, .45, 1); pointer-events: none; }
+#tabs button { z-index: 1; transition: color .25s, transform .25s; }
+#tabs button.on { transform: translateY(-1px); }
+#tabs button:active { transform: scale(.92); }
 #modal { position: fixed; z-index: 900; inset: 0; background: rgba(20, 33, 27, 0.5); display: flex; align-items: flex-end; }
 #modal .box { width: 100%; max-height: 92%; overflow: auto; background: var(--papier); border-radius: 22px 22px 0 0; padding: 20px 16px calc(20px + env(safe-area-inset-bottom)); }
 #modal .box > h2 { margin-bottom: 4px; padding-right: 40px; }
@@ -669,10 +677,19 @@ details.adv { margin-top: 10px; } details.adv summary { color: var(--gris); font
 #modal .box.has-x.tall .profile { padding-top: 54px; }
 .pf-close { width: 100%; margin-top: 16px; }
 .danger { color: #b3261e !important; border-color: #e4b2ad !important; }
-@keyframes slide-l { from { transform: translateX(36px); opacity: .4; } to { transform: none; opacity: 1; } }
-@keyframes slide-r { from { transform: translateX(-36px); opacity: .4; } to { transform: none; opacity: 1; } }
-.page.slide-l { animation: slide-l .22s ease-out; } .page.slide-r { animation: slide-r .22s ease-out; }
-@media (prefers-reduced-motion: reduce) { .page.slide-l, .page.slide-r { animation: none; } }
+@keyframes slide-l { from { transform: translateX(64px) scale(.985); opacity: .25; } to { transform: none; opacity: 1; } }
+@keyframes slide-r { from { transform: translateX(-64px) scale(.985); opacity: .25; } to { transform: none; opacity: 1; } }
+@keyframes fade-in { from { opacity: .35; } to { opacity: 1; } }
+.page.slide-l { animation: slide-l .34s cubic-bezier(.2, .85, .25, 1); } .page.slide-r { animation: slide-r .34s cubic-bezier(.2, .85, .25, 1); }
+#map.fade-in { animation: fade-in .3s ease-out; }
+@media (prefers-reduced-motion: reduce) { .page.slide-l, .page.slide-r, #map.fade-in { animation: none; } #tabs::before { transition: none; } }
 
 /* Encadré saisonnier sur la fiche d'un lieu */
 .caution { margin: 8px 0 0; padding: 7px 10px; border-radius: 8px; background: #fff4dc; border: 1px solid #ecd39a; color: #6b4e12; font-size: 0.86rem; line-height: 1.35; }
+
+/* Réinitialisation des filtres de recherche : même violet, contour seul */
+.freset { margin-top: 12px; text-align: center; }
+.freset p { margin: 0 0 8px; font-size: .88rem; color: var(--violet); font-weight: 600; }
+.btn.ghost-v { width: 100%; background: transparent; color: var(--violet); border: 2px solid var(--violet); box-shadow: none; }
+.btn.ghost-v:active { background: rgba(138, 31, 209, .08); }
+.freset .btn.big { margin-top: 0; }

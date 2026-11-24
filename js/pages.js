@@ -25,13 +25,15 @@ let goTab = () => {};
 export function setNavigator(fn) { goTab = fn; setHomeNavigator(fn); initSwipe(); }
 
 // ---------- Glisser à gauche ou à droite : sous-onglet voisin, puis onglet voisin ----------
-const SWIPE_TABS = ['accueil', 'objectifs', 'traces', 'historique', 'reglages']; // la carte garde ses gestes
+// Même ordre que la barre d'onglets. Sur la carte, qui garde ses gestes, on part du bord de l'écran.
+export const TAB_ORDER = ['accueil', 'carte', 'objectifs', 'traces', 'historique', 'reglages'];
+const EDGE = 28;
 let swipeReady = false;
 function initSwipe() {
   if (swipeReady) return;
   swipeReady = true;
   const el = page();
-  let x0 = 0, y0 = 0, t0 = 0, ok = false;
+  let x0 = 0, y0 = 0, t0 = 0, ok = false, drag = false, dx = 0;
   // Zones qui ont leurs propres gestes horizontaux : champs, curseurs, cartes, bandeaux qui défilent.
   const blocked = (t) => {
     for (let n = t; n && n !== el; n = n.parentElement) {
@@ -40,18 +42,54 @@ function initSwipe() {
     }
     return false;
   };
-  el.addEventListener('touchstart', (e) => {
-    ok = e.touches.length === 1 && !blocked(e.target) && document.getElementById('modal').hidden && !document.getElementById('tour');
+  const free = () => document.getElementById('modal').hidden && !document.getElementById('tour') && !document.body.classList.contains('guiding');
+  const neighbour = (dir) => {
+    const seg = tab === 'historique' ? el.querySelector('.seg') : null;
+    if (seg) { const b = [...seg.querySelectorAll('button')], i = b.findIndex((x) => x.classList.contains('on')); if (i >= 0 && b[i + dir]) return true; }
+    return !!TAB_ORDER[TAB_ORDER.indexOf(tab) + dir];
+  };
+  const reset = (animate) => {
+    el.style.transition = animate ? 'transform .28s cubic-bezier(.2,.9,.3,1.2), opacity .28s' : '';
+    el.style.transform = ''; el.style.opacity = '';
+    if (animate) setTimeout(() => { el.style.transition = ''; }, 300);
+  };
+  document.addEventListener('touchstart', (e) => {
+    ok = false; drag = false; dx = 0;
+    if (e.touches.length !== 1 || !free()) return;
+    const x = e.touches[0].clientX;
+    if (tab === 'carte') ok = x < EDGE || x > innerWidth - EDGE; // sur la carte : seulement depuis les bords
+    else ok = el.contains(e.target) && !blocked(e.target);
     if (!ok) return;
-    x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; t0 = Date.now();
+    x0 = x; y0 = e.touches[0].clientY; t0 = Date.now();
   }, { passive: true });
-  el.addEventListener('touchend', (e) => {
+  document.addEventListener('touchmove', (e) => {
+    if (!ok) return;
+    dx = e.touches[0].clientX - x0;
+    const dy = e.touches[0].clientY - y0;
+    if (!drag) {
+      if (Math.abs(dy) > 12 && Math.abs(dy) > Math.abs(dx)) { ok = false; return; } // défilement vertical
+      if (Math.abs(dx) < 12) return;
+      drag = true;
+    }
+    if (tab === 'carte') return;
+    // La page suit le doigt, avec de la résistance quand il n'y a rien de ce côté.
+    const dir = dx < 0 ? 1 : -1, k = neighbour(dir) ? 0.55 : 0.18;
+    el.style.transition = '';
+    el.style.transform = `translateX(${dx * k}px)`;
+    el.style.opacity = String(1 - Math.min(0.35, Math.abs(dx) / innerWidth * 0.6));
+  }, { passive: true });
+  const end = (e) => {
     if (!ok) return;
     ok = false;
-    const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0;
-    if (Math.abs(dx) < 70 || Math.abs(dx) < 1.8 * Math.abs(dy) || Date.now() - t0 > 700) return;
-    swipeTo(dx < 0 ? 1 : -1);
-  }, { passive: true });
+    if (!drag) return;
+    const dt = Math.max(1, Date.now() - t0), dir = dx < 0 ? 1 : -1;
+    const go = (Math.abs(dx) > 70 || (Math.abs(dx) > 30 && Math.abs(dx) / dt > 0.45)) && neighbour(dir);
+    if (!go) { reset(true); return; }
+    reset(false);
+    swipeTo(dir);
+  };
+  document.addEventListener('touchend', end, { passive: true });
+  document.addEventListener('touchcancel', () => { if (drag) reset(true); ok = false; }, { passive: true });
 }
 function swipeTo(dir) {
   const el = page();
@@ -61,14 +99,14 @@ function swipeTo(dir) {
     const nb = btns[i + dir];
     if (i >= 0 && nb) { nb.click(); slideIn(dir); return; }
   }
-  const j = SWIPE_TABS.indexOf(tab), nt = SWIPE_TABS[j + dir];
+  const j = TAB_ORDER.indexOf(tab), nt = TAB_ORDER[j + dir];
   if (j < 0 || !nt) return;
-  goTab(nt);
   // En arrivant par la droite, on ouvre le premier sous-onglet ; par la gauche, le dernier.
-  if (nt === 'historique') { histTab = dir > 0 ? 'mes' : 'envies'; render(); }
-  slideIn(dir);
+  if (nt === 'historique') histTab = dir > 0 ? 'mes' : 'envies';
+  goTab(nt, dir);
 }
-function slideIn(dir) {
+// Entrée de la page par le côté d'où l'on vient.
+export function slideIn(dir) {
   const el = page();
   el.classList.remove('slide-l', 'slide-r'); void el.offsetWidth;
   el.classList.add(dir > 0 ? 'slide-l' : 'slide-r');

@@ -4,7 +4,7 @@ import { store, bus, wantActive } from './state.js';
 import { initMap, map, layers, currentLayer, setLayer, trailsOn, setTrails, showMe, mapState, focus } from './map.js';
 import { openPlace, closeSheet, sheetOpen, openShared } from './sheet.js';
 import { incoming, inviteBanner } from './share.js';
-import { showTab, setNavigator, openWant, wantLabel, importGpxFile, openModal, closeModal, askName } from './pages.js';
+import { showTab, setNavigator, openWant, wantLabel, importGpxFile, openModal, closeModal, askName, TAB_ORDER, slideIn } from './pages.js';
 import { isGuiding, recenter } from './guide.js';
 import { searchLocal, searchRemote } from './places.js';
 import { TYPES } from './config.js';
@@ -12,14 +12,25 @@ import { debounce, esc, toast } from './util.js';
 
 const $ = (s) => document.querySelector(s);
 
-function go(tab) {
-  document.querySelectorAll('#tabs button').forEach((b) => b.classList.toggle('on', b.dataset.tab === tab));
+let curTab = 'accueil';
+function go(tab, dir) {
+  const prev = curTab; curTab = tab;
+  const btns = [...document.querySelectorAll('#tabs button')];
+  btns.forEach((b) => b.classList.toggle('on', b.dataset.tab === tab));
+  // Pastille de verre sous l'onglet actif : elle glisse d'un onglet à l'autre.
+  $('#tabs').style.setProperty('--i', btns.findIndex((b) => b.dataset.tab === tab));
   const onMap = tab === 'carte';
   $('#top').hidden = !onMap;
   $('#fabs').hidden = !onMap;
   if (!onMap && sheetOpen()) closeSheet();
   showTab(tab);
   if (onMap) setTimeout(() => map.invalidateSize(), 50);
+  // Transition : la nouvelle page arrive du côté de l'onglet choisi.
+  if (prev !== tab) {
+    const d = dir || Math.sign(TAB_ORDER.indexOf(tab) - TAB_ORDER.indexOf(prev));
+    if (onMap) { const m = $('#map'); m.classList.remove('fade-in'); void m.offsetWidth; m.classList.add('fade-in'); }
+    else if (d) slideIn(d);
+  }
 }
 
 function updateWant() {

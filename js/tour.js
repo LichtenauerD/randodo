@@ -82,7 +82,7 @@ const STEPS = [
     dodo: '« GPS Exchange Format ». Je le place en soirée, effet garanti.',
   },
   {
-    id: 'hud', before: async () => { if (T.hike) startGuide(T.hike, { sim: true }); await wait(1600); }, target: '.hud-top',
+    id: 'hud', before: async () => { if (T.hike) startGuide(T.hike, { sim: true }); await until('.hud-top', 4000); await wait(350); }, target: '.hud-top',
     text: '« Lancer la rando » : chrono, distance restante, et la direction à chaque carrefour.',
     dodo: '« Dans 60 m, à gauche. » Je parle GPS couramment.',
   },
@@ -99,7 +99,7 @@ const STEPS = [
   },
   {
     id: 'week', before: () => { if (isGuiding()) stopGuide(); closeSheet(); navigate('accueil'); }, target: '#hm-picks',
-    text: 'Chaque lundi, de nouvelles idées. Celles déjà faites sont cochées.',
+    text: 'Chaque semaine, dans la nuit de dimanche à lundi, de nouvelles idées. Celles déjà faites sont cochées.',
     dodo: 'Choisies à vue de bec, rien que pour toi.',
   },
   {
@@ -194,6 +194,8 @@ async function show(i) {
   T.step = st;
   if (!st) return end(true);
   T.root.classList.add('busy');
+  // Pendant que l'écran se prépare, la bulle se referme : on ne montre pas un endroit où rien ne se passe.
+  if (T.i > 0) placeHole(null);
   try { if (st.before) await st.before(); } catch { /* l'étape s'affiche quand même */ }
   if (st.skipIf && st.skipIf()) { T.root.classList.remove('busy'); return show(i + 1); }
   let el = null;

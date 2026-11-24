@@ -4,7 +4,9 @@ import { SITES } from '../data/sites.js';
 import { slugOf, esc, toast, fmtKm, settings } from './util.js';
 import { walkerSvg } from './grades.js';
 
-const base = () => new URL('./', location.href).href;
+// Adresse publique du site : c'est elle qu'on partage, quel que soit l'écran d'où l'on partage.
+export const SITE_URL = 'https://lichtenauerd.github.io/randodo/';
+const base = () => (/^https?:\/\/(127\.0\.0\.1|localhost)/.test(location.href) ? new URL('./', location.href).href : SITE_URL);
 export const isStandalone = () => (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
 
 // Numéro de la rando dans la liste du lieu : stable pour les randos précalculées (« slug-3 »).
@@ -24,11 +26,14 @@ export function linkFor(place, hike = null, list = null) {
   return u.href;
 }
 
+// Le lien est mis dans le texte lui-même : selon l'appli choisie (Messages, WhatsApp, Mail, Copier…),
+// iOS garde tantôt le texte, tantôt l'adresse ; ainsi le lien part toujours.
 async function send(url, title, text) {
+  const msg = `${text} ${url}`;
   try {
-    if (navigator.share) { await navigator.share({ title, text, url }); return; }
+    if (navigator.share) { await navigator.share({ title, text: msg }); return; }
   } catch (e) { if (e && e.name === 'AbortError') return; }
-  try { await navigator.clipboard.writeText(`${text} ${url}`); toast('Lien copié : colle-le dans ta conversation.'); }
+  try { await navigator.clipboard.writeText(msg); toast('Lien copié : colle-le dans ta conversation.'); }
   catch { prompt('Copie ce lien :', url); }
 }
 

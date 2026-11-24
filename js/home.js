@@ -63,14 +63,16 @@ function locateMe() {
   });
 }
 
-// ---------- Suggestions de la semaine (tirées de la sélection, renouvelées chaque lundi) ----------
+// ---------- Suggestions de la semaine (tirées de la sélection, renouvelées dans la nuit de dimanche à lundi) ----------
 // Idées de la semaine : tirées une fois le lundi puis gardées telles quelles jusqu'au lundi suivant,
 // quels que soient les réglages touchés entre-temps. Les semaines passées sont gardées pour l'historique.
 function mondayOf(d = new Date()) { const m = new Date(d); m.setHours(0, 0, 0, 0); m.setDate(m.getDate() - ((m.getDay() + 6) % 7)); return m; }
 function weeklyPicks(origin) {
   const week = isoWeek();
   const saved = settings.get('weekPicks', null);
-  if (saved && saved.week === week && (saved.hasOrigin || !origin)) {
+  // Les idées ne changent qu'une fois par semaine, dans la nuit de dimanche à lundi (minuit, heure du téléphone),
+  // même si la position arrive ou change en cours de semaine : seuls les temps de route sont recalculés.
+  if (saved && saved.week === week) {
     const picks = saved.names.map((n) => SITES.find((s) => s.name === n)).filter(Boolean);
     if (origin) for (const p of picks) p._min = estMinutes(dist([origin.lat, origin.lon], [p.lat, p.lon]) / 1000);
     if (picks.length) return { picks, winter: saved.winter };
@@ -235,13 +237,20 @@ function finderHtml() {
       <div class="flv">${CONFIG.levels.map((l) => `<button type="button" data-v="${l.id}" class="${q.levels.includes(l.id) ? 'on' : ''}" style="--c:${LVC[l.id]}"><b>${l.label}</b><span>${LVSUB[l.id]}</span></button>`).join('')}</div></div>
     <div class="fq"><span class="fl">Idéal… <small>${q.ideal.length ? '' : 'pour tout le monde'}</small></span>
       <div class="fideal">${AUDIENCES.map((a) => `<button type="button" data-v="${a.id}" class="${q.ideal.includes(a.id) ? 'on' : ''}"><b>${a.label}</b><span>${a.sub}</span></button>`).join('')}</div></div>
-    <button type="button" class="btn main big find" id="hm-search"><span id="f-count">Afficher les lieux</span></button>`;
+    <button type="button" class="btn main big find" id="hm-search"><span id="f-count">Afficher les lieux</span></button>
+    <div class="freset" id="f-reset"${filterCount(q) ? '' : ' hidden'}><p id="f-n">${filterLabel(q)}</p><button type="button" class="btn big ghost-v" id="f-clear">Réinitialiser les filtres</button></div>`;
 }
+// Filtres actifs du panneau : catégories, niveaux, envies « Idéal… ». Le temps de route est toujours choisi.
+const filterCount = (q) => q.groups.length + q.levels.length + q.ideal.length;
+const filterLabel = (q) => { const n = filterCount(q); return `${n} filtre${n > 1 ? 's' : ''} sélectionné${n > 1 ? 's' : ''} actuellement`; };
 function bindFinder() {
   const box = host && $('#hm-finder', host);
   if (!box) return;
   box.innerHTML = finderHtml();
-  const save = (q) => { settings.set('search', q); countPreview(); };
+  const save = (q) => {
+    settings.set('search', q); countPreview();
+    const r = $('#f-reset', box); r.hidden = !filterCount(q); $('#f-n', box).textContent = filterLabel(q);
+  };
   box.querySelectorAll('.fo .fbtn').forEach((b) => {
     b.onclick = async () => {
       if (b.dataset.o === 'town') return openOrigin();
@@ -270,6 +279,13 @@ function bindFinder() {
   multi('.fgrid', 'groups', 'rien de choisi : tout est proposé');
   multi('.flv', 'levels', 'tous les niveaux');
   multi('.fideal', 'ideal', 'pour tout le monde');
+  $('#f-clear', box).onclick = () => {
+    const q = { ...getQ(), groups: [], levels: [], ideal: [] };
+    settings.set('search', q); bindFinder();
+    const r = host && $('#hm-results', host);
+    if (r && r.innerHTML.trim() && getOrigin()) runSearch(q, getOrigin());
+    toast('Filtres réinitialisés');
+  };
   $('#hm-search', box).onclick = async () => {
     let o = getOrigin();
     if (!o) { try { o = await locateMe(); bindFinder(); } catch (err) { toast(err.message, 4500); openOrigin(); return; } }
