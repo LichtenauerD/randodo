@@ -1,19 +1,3 @@
-# nom	type	massif	pays	requête	description
-Caumasee	lac	Suisse	CH	Caumasee, Flims
-Crestasee	lac	Suisse	CH	Crestasee, Trin
-Lac de Derborence	lac	Suisse	CH	Lac de Derborence
-Lac Bleu d'Arolla	lac	Suisse	CH	Lac Bleu, Evolène
-Lac de Taney	lac	Suisse	CH	Lac de Taney, Vouvry
-Chutes de Trümmelbach	cascade	Suisse	CH	Trümmelbachfälle
-Chutes du Giessbach	cascade	Suisse	CH	Giessbachfälle
-Cascade de Foroglio	cascade	Suisse	CH	Cascata di Foroglio
-Gorges du Trient	gorge	Suisse	CH	Gorges du Trient, Vernayaz
-Viamala	gorge	Suisse	CH	Viamalaschlucht
-Gorges de la Tamina	gorge	Suisse	CH	Taminaschlucht
-Grottes de Saint-Béat	grotte	Suisse	CH	St. Beatus-Höhlen
-Grottes de Vallorbe	grotte	Jura	CH	Grottes de Vallorbe
-Höllgrotten	grotte	Suisse	CH	Höllgrotten, Baar
-Grotte aux Fées	grotte	Suisse	CH	Grotte aux Fées, Saint-Maurice
-Rochers de Naye	sommet	Suisse	CH	Rochers de Naye
-Monte Generoso	sommet	Suisse	CH	Monte Generoso
-Bisse du Ro	vue	Suisse	CH	Bisse du Ro
+# nom	type	massif	pays	requête
+Stäubifall	cascade	Suisse	CH	Stäubifall
+Stäuber	cascade	Suisse	CH	Stäuber, Unterschächen
