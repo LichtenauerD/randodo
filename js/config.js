@@ -4,7 +4,7 @@ const params = new URLSearchParams(location.search);
 // Mode test : ?mock=http://localhost:8765 remplace tous les services par un serveur local.
 const MOCK = params.get('mock') || '';
 
-export const VERSION = '1.9.0';
+export const VERSION = '1.9.1';
 
 export const CONFIG = {
   mock: MOCK,
@@ -115,7 +115,7 @@ export const TYPES = {
 };
 
 // Sites d'altitude : neige possible l'hiver, écartés des idées de la semaine de novembre à avril.
-export const HIGH = new Set(['Säntis', 'Bachalpsee', 'Oeschinensee', 'Niesen', 'Pilatus', 'Grosser Mythen', 'Fronalpstock', 'Moléson', 'Rigi', 'Seealpsee', 'Ebenalp et Aescher', 'Schwarzsee', 'Sentier des Roches', 'Chasseral', 'Chasseron', 'Lac des Perches', 'Lac de Derborence', 'Lac Bleu d\'Arolla', 'Lac de Taney', 'Rochers de Naye', 'Monte Generoso', 'Bisse du Ro']);
+export const HIGH = new Set(['Säntis', 'Bachalpsee', 'Oeschinensee', 'Niesen', 'Pilatus', 'Grosser Mythen', 'Fronalpstock', 'Moléson', 'Rigi', 'Seealpsee', 'Ebenalp et Aescher', 'Schwarzsee', 'Sentier des Roches', 'Chasseral', 'Chasseron', 'Lac des Perches', 'Lac de Derborence', 'Lac Bleu d\'Arolla', 'Lac de Taney', 'Rochers de Naye', 'Monte Generoso', 'Bisse du Ro', 'Stäubifall']);
 // Lieux fermés ou inaccessibles une partie de l'année : encadré « attention » sur la fiche.
 const CAVE = 'Grotte fermée en hiver. Vérifie les dates d\'ouverture avant de partir.';
 export const SEASON_NOTES = {

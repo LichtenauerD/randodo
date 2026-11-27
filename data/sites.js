@@ -261,6 +261,7 @@ const RAW = [
   ['Rochers de Naye', 'sommet', 46.4318, 6.9761, 'Suisse', 'CH', 'Sommet à 2 042 m au-dessus de Montreux, panorama sur le Léman et les Alpes. Terrain de montagne.'],
   ['Monte Generoso', 'sommet', 45.9313, 9.0199, 'Suisse', 'CH', 'Sommet du sud du Tessin, au-dessus du lac de Lugano. Terrain de montagne.'],
   ['Bisse du Ro', 'vue', 46.3317, 7.4616, 'Suisse', 'CH', 'Ancien canal d\'irrigation au-dessus de Crans-Montana, sentier à flanc de falaise. Passages exposés.'],
+  ['Stäubifall', 'cascade', 46.8626, 8.8209, 'Suisse', 'CH', 'Chute d\'une centaine de mètres sur l\'alpage d\'Äsch, au-dessus d\'Unterschächen, sur la route du Klausenpass.'],
 ];
 
 export const SITES = RAW.map(([name, type, lat, lon, massif, country, desc], i) => ({
