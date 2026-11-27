@@ -206,4 +206,5 @@ export const PHOTOS = {
   'Grotte aux Fées': { file: 'photos/grotte-aux-fees.jpg', credit: 'Tania81, CC BY-SA 3.0, Wikimedia Commons', url: 'https://commons.wikimedia.org/wiki/File:Grotte_aux_F%C3%A9es.jpg' },
   'Rochers de Naye': { file: 'photos/rochers-de-naye.jpg', credit: 'Christian David, CC BY-SA 4.0, Wikimedia Commons', url: 'https://commons.wikimedia.org/wiki/File:Rochers_de_Naye,_Le_Merdasson_et_train_MOB_depuis_Dent_de_Jaman,_Montreux,_Vaud.jpg' },
   'Monte Generoso': { file: 'photos/monte-generoso.jpg', credit: 'MarkusMark, CC BY-SA 3.0, Wikimedia Commons', url: 'https://commons.wikimedia.org/wiki/File:31MonteGeneroso.jpg' },
+  'Stäubifall': { file: 'photos/staubifall.jpg', credit: 'PantaRhei, CC BY-SA 4.0, Wikimedia Commons', url: 'https://commons.wikimedia.org/wiki/File:St%C3%A4uber_(St%C3%A4ubifall)_bei_Untersch%C3%A4chen_im_Sch%C3%A4chental.jpg' },
 };
