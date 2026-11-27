@@ -1,0 +1,43 @@
+{
+ "staubifall": {
+  "name": "Stäubifall",
+  "cands": [
+   {
+    "n": 1,
+    "file": "File:Äsch-Brücke über den Stäuben, Unterschächen UR 20230815-jag9889.jpg",
+    "from": "proche (369 m)",
+    "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/16/%C3%84sch-Br%C3%BCcke_%C3%BCber_den_St%C3%A4uben%2C_Untersch%C3%A4chen_UR_20230815-jag9889.jpg/960px-%C3%84sch-Br%C3%BCcke_%C3%BCber_den_St%C3%A4uben%2C_Untersch%C3%A4chen_UR_20230815-jag9889.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "page": "https://commons.wikimedia.org/wiki/File:%C3%84sch-Br%C3%BCcke_%C3%BCber_den_St%C3%A4uben,_Untersch%C3%A4chen_UR_20230815-jag9889.jpg",
+    "w": 4608,
+    "h": 3456,
+    "author": "Jag9889",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+   },
+   {
+    "n": 2,
+    "file": "File:Stäuber (Stäubifall) bei Unterschächen im Schächental.jpg",
+    "from": "proche (419 m)",
+    "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e5/St%C3%A4uber_%28St%C3%A4ubifall%29_bei_Untersch%C3%A4chen_im_Sch%C3%A4chental.jpg/960px-St%C3%A4uber_%28St%C3%A4ubifall%29_bei_Untersch%C3%A4chen_im_Sch%C3%A4chental.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "page": "https://commons.wikimedia.org/wiki/File:St%C3%A4uber_(St%C3%A4ubifall)_bei_Untersch%C3%A4chen_im_Sch%C3%A4chental.jpg",
+    "w": 7952,
+    "h": 5304,
+    "author": "PantaRhei",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+   },
+   {
+    "n": 3,
+    "file": "File:Waterfall asch.jpg",
+    "from": "proche (425 m)",
+    "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/1e/Waterfall_asch.jpg/960px-Waterfall_asch.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "page": "https://commons.wikimedia.org/wiki/File:Waterfall_asch.jpg",
+    "w": 4000,
+    "h": 6000,
+    "author": "Gindegg",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+   }
+  ]
+ }
+}
