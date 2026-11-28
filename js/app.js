@@ -5,7 +5,7 @@ import { initMap, map, layers, currentLayer, setLayer, trailsOn, setTrails, show
 import { openPlace, closeSheet, sheetOpen, openShared } from './sheet.js';
 import { incoming, inviteBanner } from './share.js';
 import { showTab, setNavigator, openWant, wantLabel, importGpxFile, openModal, closeModal, askName, TAB_ORDER, slideIn } from './pages.js';
-import { isGuiding, recenter } from './guide.js';
+import { isGuiding, recenter, savedGuide, startGuide } from './guide.js';
 import { searchLocal, searchRemote } from './places.js';
 import { TYPES } from './config.js';
 import { debounce, esc, toast } from './util.js';
@@ -132,6 +132,14 @@ async function boot() {
     history.replaceState(null, '', location.pathname);
     openShared(shared.place, shared.n);
     inviteBanner();
+    return;
+  }
+  // Rando interrompue (appli fermée par le téléphone en arrière-plan) : on la reprend directement.
+  const run = savedGuide();
+  if (run) {
+    go('carte');
+    startGuide(run.hike, { resume: run.run });
+    toast('Rando reprise : chrono, distance et progression sont conservés.', 4500);
     return;
   }
   go(new URLSearchParams(location.search).get('tab') || 'accueil');

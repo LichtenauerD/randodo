@@ -18,6 +18,35 @@ let g = null;
 const hud = () => document.getElementById('hud');
 export const isGuiding = () => !!g;
 
+// ---------- Sauvegarde de la rando en cours ----------
+// iOS peut fermer l'appli quand elle passe en arrière-plan. On garde donc sur le téléphone la rando,
+// le chrono, la progression et la trace marchée, pour reprendre exactement là où on en était.
+const RUN = 'randodo.guideRun', HIKE = 'randodo.guideHike';
+const MAX_AGE = 18 * 3600e3; // au-delà, on considère la rando abandonnée
+function saveRun(force) {
+  if (!g || g.sim) return;
+  const now = Date.now();
+  if (!force && now - (g.savedAt || 0) < 2000) return;
+  g.savedAt = now;
+  if (!g.paused) g.elapsed += now - g.tick;
+  g.tick = now;
+  try {
+    localStorage.setItem(RUN, JSON.stringify({ id: g.hike.id, savedAt: now, elapsed: g.elapsed, paused: g.paused, along: g.along, walked: g.walked,
+      track: g.track, last: g.last, lastT: g.lastT, started: g.started, arrived: g.arrived, t0: g.t0 }));
+  } catch { /* stockage plein : la rando continue sans sauvegarde */ }
+}
+function clearRun() { try { localStorage.removeItem(RUN); localStorage.removeItem(HIKE); } catch { /* rien */ } }
+// Rando interrompue à reprendre au lancement, ou null.
+export function savedGuide() {
+  try {
+    const run = JSON.parse(localStorage.getItem(RUN) || 'null'), hike = JSON.parse(localStorage.getItem(HIKE) || 'null');
+    if (!run || !hike || run.id !== hike.id || Date.now() - run.savedAt > MAX_AGE) { if (run || hike) clearRun(); return null; }
+    return { hike, run };
+  } catch { clearRun(); return null; }
+}
+const onHide = () => { if (document.visibilityState === 'hidden') saveRun(true); };
+const onPageHide = () => saveRun(true);
+
 // Point du tracé le plus proche, cherché d'abord autour de la progression connue :
 // sur un aller-retour ou une boucle qui se recroise, cela évite de sauter d'un passage à l'autre.
 function locate(p) {
@@ -88,10 +117,15 @@ function onPos(lat, lon, acc) {
   showMe(lat, lon, acc);
   const total = g.cum[g.cum.length - 1];
   const loc = locate(p);
-  // Trace réellement parcourue.
+  // Trace réellement parcourue. Un grand écart entre deux positions (appli mise en veille ou fermée)
+  // compte s'il reste à une allure de marche ; sinon c'est un saut du GPS.
+  const now = Date.now();
   if (!g.last || dist(g.last, p) > 8) {
-    if (g.last && dist(g.last, p) < 400) g.walked += dist(g.last, p);
-    g.last = p; g.track.push([+lat.toFixed(5), +lon.toFixed(5)]);
+    if (g.last) {
+      const d = dist(g.last, p), sec = (now - (g.lastT || now)) / 1000;
+      if (d < 400 || (sec > 0 && d / sec < 2.2)) g.walked += d;
+    }
+    g.last = p; g.lastT = now; g.track.push([+lat.toFixed(5), +lon.toFixed(5)]);
   }
   const precise = !acc || acc < 45;
   if (loc.d > 300 && g.along < 80 && !g.started) {
@@ -112,12 +146,7 @@ function onPos(lat, lon, acc) {
   } else if (loc.d <= CONFIG.offRoute) {
     g.started = true; g.along = loc.along; g.offCount = 0;
   }
-  const left = Math.max(0, total - g.along);
-  const upLeft = g.hike.prof ? upAfter(g.hike.prof, g.along) : null;
-  document.getElementById('hud-left').textContent = fmtKm(left).replace(' km', '');
-  document.getElementById('hud-up').textContent = upLeft === null ? '—' : upLeft;
-  document.getElementById('hud-eta').textContent = fmtDur((g.hike.minutes || 0) * (left / total));
-  document.getElementById('hud-fill').style.width = Math.round((g.along / total) * 100) + '%';
+  const left = stats();
   live();
   if (left < 40 && g.walked > total * 0.5 && !g.arrived) {
     g.arrived = true;
@@ -125,6 +154,19 @@ function onPos(lat, lon, acc) {
     beep();
   }
   if (g.follow) map.panTo(p, { animate: true, duration: 0.5 });
+  saveRun();
+}
+
+// Chiffres du bandeau : reste à parcourir, à monter, temps restant, barre de progression.
+function stats() {
+  const total = g.cum[g.cum.length - 1];
+  const left = Math.max(0, total - g.along);
+  const upLeft = g.hike.prof ? upAfter(g.hike.prof, g.along) : null;
+  document.getElementById('hud-left').textContent = fmtKm(left).replace(' km', '');
+  document.getElementById('hud-up').textContent = upLeft === null ? '—' : upLeft;
+  document.getElementById('hud-eta').textContent = fmtDur((g.hike.minutes || 0) * (left / total));
+  document.getElementById('hud-fill').style.width = Math.round((g.along / total) * 100) + '%';
+  return left;
 }
 
 // Panneau du bas et consigne d'intersection : recalculés à chaque position.
@@ -183,6 +225,7 @@ function tickClock() {
   g.tick = now;
   const c = document.getElementById('hud-clock');
   if (c) c.textContent = clock(g.elapsed);
+  if (now - (g.savedAt || 0) > 5000) saveRun(true);
 }
 
 async function wake() {
@@ -190,7 +233,7 @@ async function wake() {
     if ('wakeLock' in navigator && document.visibilityState === 'visible') g.wake = await navigator.wakeLock.request('screen');
   } catch { /* le téléphone gérera sa mise en veille */ }
 }
-function onVisible() { if (g && document.visibilityState === 'visible') wake(); }
+function onVisible() { if (g && document.visibilityState === 'visible') { tickClock(); wake(); } }
 
 export function startGuide(h, opts = {}) {
   if (g) stopGuide(false);
@@ -198,6 +241,15 @@ export function startGuide(h, opts = {}) {
   document.querySelector('#page').hidden = true;
   g = { hike: h, pts: h.pts, cum: cumulative(h.pts), along: 0, walked: 0, track: [], last: null, off: false, offCount: 0, started: false, arrived: false, follow: true, paused: false, t0: Date.now(), sim: !!opts.sim,
     elapsed: 0, tick: Date.now(), runs: slopeRuns(h.prof), profBucket: -1, warned: null };
+  const r = opts.resume;
+  if (r) {
+    // Reprise après fermeture : le chrono a continué de tourner pendant que l'appli était fermée.
+    Object.assign(g, { along: r.along || 0, walked: r.walked || 0, track: r.track || [], last: r.last || null, lastT: r.lastT || null,
+      started: !!r.started, arrived: !!r.arrived, paused: !!r.paused, t0: r.t0 || Date.now(),
+      elapsed: (r.elapsed || 0) + (r.paused ? 0 : Math.max(0, Date.now() - r.savedAt)) });
+  } else if (!g.sim) {
+    try { localStorage.setItem(HIKE, JSON.stringify(h)); } catch { /* trop gros pour être gardé : pas de reprise possible */ }
+  }
   try { g.audio = new (window.AudioContext || window.webkitAudioContext)(); } catch { g.audio = null; }
   document.body.classList.add('guiding');
   setMarkersVisible(false);
@@ -208,7 +260,7 @@ export function startGuide(h, opts = {}) {
   hud().innerHTML = `<div class="hud-top">
       <p class="name">${esc(h.title)}</p>
       <div class="row">
-        <div><b id="hud-clock">0:00</b><span>chrono</span></div>
+        <div><b id="hud-clock">${clock(g.elapsed)}</b><span>chrono</span></div>
         <div><b id="hud-left">${fmtKm(total).replace(' km', '')}</b><span>km restants</span></div>
         <div><b id="hud-up">${h.up == null ? '—' : h.up}</b><span>m à monter</span></div>
         <div><b id="hud-eta">${fmtDur(h.minutes || 0)}</b><span>encore</span></div>
@@ -225,11 +277,13 @@ export function startGuide(h, opts = {}) {
       <p id="hud-next" class="hud-run soft"></p>
     </div>
     <div class="hud-bottom">
-      <button type="button" class="btn" id="hud-pause">Pause</button>
+      <button type="button" class="btn" id="hud-pause">${g.paused ? 'Reprendre' : 'Pause'}</button>
       <button type="button" class="btn go" id="hud-stop">Terminer</button>
     </div>`;
   document.getElementById('hud-pause').onclick = () => {
+    tickClock();
     g.paused = !g.paused;
+    saveRun(true);
     document.getElementById('hud-pause').textContent = g.paused ? 'Reprendre' : 'Pause';
     alertBox(g.paused ? 'Guidage en pause.' : '', 'info');
   };
@@ -242,10 +296,14 @@ export function startGuide(h, opts = {}) {
     g.profBucket = -1; live();
   };
   g.clock = setInterval(tickClock, 1000);
+  if (r) stats();
   live();
   map.on('dragstart', unfollow);
   document.addEventListener('visibilitychange', onVisible);
+  document.addEventListener('visibilitychange', onHide);
+  window.addEventListener('pagehide', onPageHide);
   wake();
+  if (!g.sim) saveRun(true);
   if (g.sim) {
     // Démonstration : un marcheur virtuel parcourt la trace.
     let i = 0;
@@ -291,6 +349,9 @@ export function stopGuide(restoreUi = true) {
   if (g.audio) g.audio.close().catch(() => {});
   map.off('dragstart', unfollow);
   document.removeEventListener('visibilitychange', onVisible);
+  document.removeEventListener('visibilitychange', onHide);
+  window.removeEventListener('pagehide', onPageHide);
+  if (!g.sim) clearRun();
   g = null;
   hud().hidden = true; hud().innerHTML = '';
   document.body.classList.remove('guiding');

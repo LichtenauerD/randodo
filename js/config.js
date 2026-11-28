@@ -4,7 +4,7 @@ const params = new URLSearchParams(location.search);
 // Mode test : ?mock=http://localhost:8765 remplace tous les services par un serveur local.
 const MOCK = params.get('mock') || '';
 
-export const VERSION = '1.9.1';
+export const VERSION = '1.9.2';
 
 export const CONFIG = {
   mock: MOCK,
